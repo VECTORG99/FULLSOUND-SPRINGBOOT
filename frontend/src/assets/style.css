@@ -1,0 +1,45 @@
+﻿/*=================================
+-----------------------------------
+  CSS Modular
+  Todos los estilos han sido migrados a módulos organizados en /css/, este archivo importa todos los módulos para mantener compatibilidad.
+  Para desarrollo y mantenimiento, edita los módulos específicos que estan abajo.
+  
+  Estructura de módulos:
+  * base.css: Variables, reset, tipografía, elementos comunes, layout
+  * header.css: Header, navegación y menú
+  * footer.css: Footer
+  * hero.css: Carrusel/Hero section
+  * inicio.css: Página de inicio
+  * login.css: Login y registro
+  * beats.css: Tienda de beats
+  * producto.css: Página de producto
+  * admin.css: Panel de administración
+  * carrito.css: Carrito de compras
+  * creditos.css: Página de créditos
+  * playlist.css: Playlists y categorías
+  * blog.css: Blog
+  * player.css: Reproductores multimedia
+  * contacto.css: Formularios de contacto
+  * responsive.css: Media queries
+  
+  Ver src/index.css para los imports principales.
+ ---------------------------------
+ =================================*/
+
+/* Importar todos los módulos CSS */
+@import './css/base.css';
+@import './css/header.css';
+@import './css/footer.css';
+@import './css/hero.css';
+@import './css/inicio.css';
+@import './css/login.css';
+@import './css/beats.css';
+@import './css/producto.css';
+@import './css/admin.css';
+@import './css/carrito.css';
+@import './css/creditos.css';
+@import './css/playlist.css';
+@import './css/blog.css';
+@import './css/player.css';
+@import './css/contacto.css';
+@import './css/responsive.css';
