@@ -64,22 +64,3 @@ logs/
 
 # Maven wrapper
 .mvn/wrapper/maven-wrapper.jar
-
-# ========================================
-# DOCKER
-# ========================================
-# Environment variables (contiene secretos)
-.env
-
-# Logs de contenedores
-logs/backend/*.log
-logs/frontend/*.log
-
-# Backups de base de datos
-backup_*.sql
-
-# Volúmenes locales (si se montan)
-docker/volumes/
-
-# Docker Compose overrides
-docker-compose.override.yml
