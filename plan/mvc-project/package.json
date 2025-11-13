@@ -1,0 +1,28 @@
+{
+  "name": "mvc-project",
+  "version": "1.0.0",
+  "description": "A project structured using the MVC pattern for both frontend and backend.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node backend/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "mongoose": "^5.10.9",
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.4",
+    "jest": "^26.6.0"
+  },
+  "keywords": [
+    "mvc",
+    "frontend",
+    "backend",
+    "nodejs"
+  ],
+  "author": "Your Name",
+  "license": "ISC"
+}
