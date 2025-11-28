@@ -95,7 +95,7 @@ public class BeatController {
      */
     @GetMapping("/featured")
     public ResponseEntity<List<BeatResponse>> getFeatured(@RequestParam(defaultValue = "10") Integer limit) {
-        List<BeatResponse> responses = beatService.getFeatured(limit);
+        List<BeatResponse> responses = beatService.getFeatured();
         return ResponseEntity.ok(responses);
     }
 
@@ -161,9 +161,9 @@ public class BeatController {
      * @return beat actualizado
      */
     @PostMapping("/{id}/play")
-    public ResponseEntity<BeatResponse> incrementPlays(@PathVariable Integer id) {
-        BeatResponse response = beatService.incrementPlays(id);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<Void> incrementPlays(@PathVariable Integer id) {
+        beatService.incrementPlays(id);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -174,8 +174,8 @@ public class BeatController {
      */
     @PostMapping("/{id}/like")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<BeatResponse> incrementLikes(@PathVariable Integer id) {
-        BeatResponse response = beatService.incrementLikes(id);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<Void> incrementLikes(@PathVariable Integer id) {
+        beatService.incrementLikes(id);
+        return ResponseEntity.ok().build();
     }
 }

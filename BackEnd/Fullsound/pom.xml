@@ -22,7 +22,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		
 		<!-- Frontend configuration -->
-		<frontend.directory>${project.basedir}/../frontend</frontend.directory>
+		<frontend.directory>${project.basedir}/../../FrontEnd</frontend.directory>
 		<node.version>v20.11.0</node.version>
 		<npm.version>10.2.4</npm.version>
 	</properties>

@@ -42,13 +42,13 @@ public class PagoServiceImpl implements PagoService {
 
     @Override
     @Transactional
-    public PagoResponse createPaymentIntent(PagoRequest request) {
+    public PagoResponse createPaymentIntent(Integer pedidoId) {
         // Configurar Stripe API key
         Stripe.apiKey = stripeApiKey;
 
         // Buscar pedido
-        Pedido pedido = pedidoRepository.findById(request.getPedidoId())
-                .orElseThrow(() -> new ResourceNotFoundException("Pedido", "id", request.getPedidoId().toString()));
+        Pedido pedido = pedidoRepository.findById(pedidoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido", "id", pedidoId.toString()));
 
         // Validar que el pedido no tenga un pago exitoso previo
         if (pagoRepository.findByPedido(pedido).stream()
@@ -72,7 +72,6 @@ public class PagoServiceImpl implements PagoService {
                     .setCurrency("usd")
                     .setDescription("Compra de beats - Pedido: " + pedido.getNumeroPedido())
                     .putAllMetadata(metadata)
-                    .setPaymentMethod(request.getPaymentMethodId())
                     .setConfirm(false) // No confirmar automáticamente
                     .build();
 
@@ -85,7 +84,6 @@ public class PagoServiceImpl implements PagoService {
             pago.setEstado(EstadoPago.PENDIENTE);
             pago.setMonto(pedido.getTotal());
             pago.setMoneda("USD");
-            pago.setClientSecret(paymentIntent.getClientSecret());
             pago.setCreatedAt(LocalDateTime.now());
 
             // Guardar pago
@@ -104,7 +102,9 @@ public class PagoServiceImpl implements PagoService {
 
     @Override
     @Transactional
-    public PagoResponse processPago(Integer pagoId, String stripeChargeId) {
+    public PagoResponse processPago(PagoRequest request) {
+        Integer pagoId = request.getPedidoId();
+        String stripeChargeId = request.getPaymentMethodId();
         Pago pago = pagoRepository.findById(pagoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Pago", "id", pagoId.toString()));
 

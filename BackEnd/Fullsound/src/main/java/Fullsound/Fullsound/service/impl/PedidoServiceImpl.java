@@ -39,10 +39,10 @@ public class PedidoServiceImpl implements PedidoService {
 
     @Override
     @Transactional
-    public PedidoResponse create(PedidoRequest request, String nombreUsuario) {
+    public PedidoResponse create(PedidoRequest request, Integer usuarioId) {
         // Buscar usuario
-        Usuario usuario = usuarioRepository.findByNombreUsuario(nombreUsuario)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario", "nombreUsuario", nombreUsuario));
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", "id", usuarioId.toString()));
 
         // Validar que hay beats en el pedido
         if (request.getBeatIds() == null || request.getBeatIds().isEmpty()) {
@@ -113,9 +113,9 @@ public class PedidoServiceImpl implements PedidoService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<PedidoResponse> getByUsuario(String nombreUsuario) {
-        Usuario usuario = usuarioRepository.findByNombreUsuario(nombreUsuario)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario", "nombreUsuario", nombreUsuario));
+    public List<PedidoResponse> getByUsuario(Integer usuarioId) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", "id", usuarioId.toString()));
         
         List<Pedido> pedidos = pedidoRepository.findByUsuarioOrderByFechaCompraDesc(usuario);
         return pedidos.stream()
@@ -134,7 +134,8 @@ public class PedidoServiceImpl implements PedidoService {
 
     @Override
     @Transactional
-    public PedidoResponse updateEstado(Integer id, EstadoPedido nuevoEstado) {
+    public PedidoResponse updateEstado(Integer id, String estado) {
+        EstadoPedido nuevoEstado = EstadoPedido.valueOf(estado);
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", "id", id.toString()));
         

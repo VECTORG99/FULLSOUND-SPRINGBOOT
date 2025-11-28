@@ -30,7 +30,7 @@ public class PagoController {
     @PostMapping("/create-intent")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<PagoResponse> createPaymentIntent(@Valid @RequestBody PagoRequest request) {
-        PagoResponse response = pagoService.createPaymentIntent(request);
+        PagoResponse response = pagoService.createPaymentIntent(request.getPedidoId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -46,7 +46,10 @@ public class PagoController {
     public ResponseEntity<PagoResponse> processPago(
             @PathVariable Integer pagoId,
             @RequestParam String stripeChargeId) {
-        PagoResponse response = pagoService.processPago(pagoId, stripeChargeId);
+        PagoRequest request = new PagoRequest();
+        request.setPedidoId(pagoId);
+        request.setPaymentMethodId(stripeChargeId);
+        PagoResponse response = pagoService.processPago(request);
         return ResponseEntity.ok(response);
     }
 

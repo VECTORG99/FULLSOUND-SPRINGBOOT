@@ -119,7 +119,7 @@ public interface BeatRepository extends JpaRepository<Beat, Integer> {
      * @return lista de beats más reproducidos
      */
     @Query("SELECT b FROM Beat b WHERE b.activo = true ORDER BY b.reproducciones DESC LIMIT :limit")
-    List<Beat> findTopByOrderByReproducciones Desc(@Param("limit") int limit);
+    List<Beat> findTopByOrderByReproduccionesDesc(@Param("limit") int limit);
     
     /**
      * Obtiene los beats más descargados.

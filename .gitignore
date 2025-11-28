@@ -1,28 +1,29 @@
 # FullSound - GitIgnore
 
 # Frontend (Node/React)
-frontend/node_modules/
-frontend/dist/
-frontend/.vite/
-frontend/coverage/
-frontend/.env
-frontend/.env.local
-frontend/.env.production
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
+FrontEnd/node_modules/
+FrontEnd/dist/
+FrontEnd/.vite/
+FrontEnd/coverage/
+FrontEnd/.env
+FrontEnd/.env.local
+FrontEnd/.env.production
+FrontEnd/npm-debug.log*
+FrontEnd/yarn-debug.log*
+FrontEnd/yarn-error.log*
+FrontEnd/package-lock.json
 
 # Backend (Spring Boot/Maven)
-Fullsound/target/
-Fullsound/.mvn/
-Fullsound/mvnw
-Fullsound/mvnw.cmd
-Fullsound/.idea/
-Fullsound/*.iml
-Fullsound/.classpath
-Fullsound/.project
-Fullsound/.settings/
-Fullsound/.vscode/
+BackEnd/Fullsound/target/
+BackEnd/Fullsound/.mvn/
+BackEnd/Fullsound/mvnw
+BackEnd/Fullsound/mvnw.cmd
+BackEnd/Fullsound/.idea/
+BackEnd/Fullsound/*.iml
+BackEnd/Fullsound/.classpath
+BackEnd/Fullsound/.project
+BackEnd/Fullsound/.settings/
+BackEnd/Fullsound/.vscode/
 
 # Build artifacts
 *.jar
@@ -32,9 +33,9 @@ Fullsound/.vscode/
 *.log
 
 # Spring Boot
-Fullsound/src/main/resources/static/assets/
-Fullsound/src/main/resources/static/index.html
-Fullsound/src/main/resources/static/favicon.ico
+BackEnd/Fullsound/src/main/resources/static/assets/
+BackEnd/Fullsound/src/main/resources/static/index.html
+BackEnd/Fullsound/src/main/resources/static/favicon.ico
 
 # Database
 *.db

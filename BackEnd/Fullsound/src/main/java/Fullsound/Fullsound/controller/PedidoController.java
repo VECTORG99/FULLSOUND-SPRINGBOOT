@@ -3,6 +3,9 @@ package Fullsound.Fullsound.controller;
 import Fullsound.Fullsound.dto.request.PedidoRequest;
 import Fullsound.Fullsound.dto.response.PedidoResponse;
 import Fullsound.Fullsound.enums.EstadoPedido;
+import Fullsound.Fullsound.exception.ResourceNotFoundException;
+import Fullsound.Fullsound.model.Usuario;
+import Fullsound.Fullsound.repository.UsuarioRepository;
 import Fullsound.Fullsound.service.PedidoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,7 @@ import java.util.List;
 public class PedidoController {
 
     private final PedidoService pedidoService;
+    private final UsuarioRepository usuarioRepository;
 
     /**
      * Crea un nuevo pedido para el usuario autenticado.
@@ -38,7 +42,9 @@ public class PedidoController {
             @Valid @RequestBody PedidoRequest request,
             Authentication authentication) {
         String nombreUsuario = authentication.getName();
-        PedidoResponse response = pedidoService.create(request, nombreUsuario);
+        Usuario usuario = usuarioRepository.findByNombreUsuario(nombreUsuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", "nombreUsuario", nombreUsuario));
+        PedidoResponse response = pedidoService.create(request, usuario.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -78,7 +84,9 @@ public class PedidoController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<PedidoResponse>> getMisPedidos(Authentication authentication) {
         String nombreUsuario = authentication.getName();
-        List<PedidoResponse> responses = pedidoService.getByUsuario(nombreUsuario);
+        Usuario usuario = usuarioRepository.findByNombreUsuario(nombreUsuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", "nombreUsuario", nombreUsuario));
+        List<PedidoResponse> responses = pedidoService.getByUsuario(usuario.getId());
         return ResponseEntity.ok(responses);
     }
 
@@ -106,7 +114,7 @@ public class PedidoController {
     public ResponseEntity<PedidoResponse> updateEstado(
             @PathVariable Integer id,
             @RequestParam EstadoPedido estado) {
-        PedidoResponse response = pedidoService.updateEstado(id, estado);
+        PedidoResponse response = pedidoService.updateEstado(id, estado.name());
         return ResponseEntity.ok(response);
     }
 }
