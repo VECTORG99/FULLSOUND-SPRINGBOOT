@@ -1,6 +1,6 @@
 package Fullsound.Fullsound.model;
 
-import Fullsound.Fullsound.enums.EstadoPago;
+
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -38,10 +38,9 @@ public class Pago {
     @Column(name = "stripe_charge_id", length = 255)
     private String stripeChargeId;
     
-    @Enumerated(EnumType.STRING)
-    @Column(name = "estado", length = 20)
+    @Column(name = "estado", length = 20, nullable = false)
     @Builder.Default
-    private EstadoPago estado = EstadoPago.PENDIENTE;
+    private String estado = "PENDIENTE"; // PENDIENTE, PROCESANDO, EXITOSO, FALLIDO, REEMBOLSADO
     
     @Column(name = "monto", nullable = false)
     private Integer monto;
@@ -49,9 +48,6 @@ public class Pago {
     @Column(name = "moneda", length = 3)
     @Builder.Default
     private String moneda = "CLP";
-    
-    @Column(name = "metadata", columnDefinition = "TEXT")
-    private String metadata; // JSON con información adicional
     
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

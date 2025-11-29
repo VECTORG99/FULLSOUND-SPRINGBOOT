@@ -1,7 +1,6 @@
 package Fullsound.Fullsound.model;
 
-import Fullsound.Fullsound.enums.EstadoPedido;
-import Fullsound.Fullsound.enums.MetodoPago;
+
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -47,14 +46,12 @@ public class Pedido {
     @Column(name = "total", nullable = false)
     private Integer total;
     
-    @Enumerated(EnumType.STRING)
-    @Column(name = "estado", length = 20)
+    @Column(name = "estado", length = 20, nullable = false)
     @Builder.Default
-    private EstadoPedido estado = EstadoPedido.PENDIENTE;
+    private String estado = "PENDIENTE"; // PENDIENTE, PROCESANDO, COMPLETADO, CANCELADO, REEMBOLSADO
     
-    @Enumerated(EnumType.STRING)
     @Column(name = "metodo_pago", length = 20)
-    private MetodoPago metodoPago;
+    private String metodoPago; // STRIPE, PAYPAL, TRANSFERENCIA
     
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

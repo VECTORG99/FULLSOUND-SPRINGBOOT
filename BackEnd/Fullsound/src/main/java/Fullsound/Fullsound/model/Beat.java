@@ -1,6 +1,5 @@
 package Fullsound.Fullsound.model;
 
-import Fullsound.Fullsound.enums.EstadoBeat;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -49,42 +48,34 @@ public class Beat {
     @Column(name = "tonalidad", length = 10)
     private String tonalidad;
     
-    @Column(name = "mood", length = 50)
-    private String mood;
+    @Column(name = "duracion")
+    private Integer duracion; // Duración en segundos
     
-    @Column(name = "tags", length = 255)
-    private String tags;
+    @Column(name = "genero", length = 50)
+    private String genero;
     
-    @Enumerated(EnumType.STRING)
-    @Column(name = "estado", length = 20)
-    @Builder.Default
-    private EstadoBeat estado = EstadoBeat.DISPONIBLE;
+    @Column(name = "etiquetas", columnDefinition = "TEXT")
+    private String etiquetas; // Tags separados por comas
     
-    @Column(name = "archivo_audio", length = 255)
-    private String archivoAudio;
+    @Column(name = "descripcion", columnDefinition = "TEXT")
+    private String descripcion;
     
-    @Column(name = "imagen_portada", length = 255)
-    private String imagenPortada;
+    @Column(name = "imagen_url", length = 500)
+    private String imagenUrl;
     
-    @Column(name = "reproducciones")
+    @Column(name = "audio_url", length = 500)
+    private String audioUrl;
+    
+    @Column(name = "audio_demo_url", length = 500)
+    private String audioDemoUrl;
+    
+    @Column(name = "reproducciones", nullable = false)
     @Builder.Default
     private Integer reproducciones = 0;
     
-    @Column(name = "descargas")
+    @Column(name = "estado", length = 20, nullable = false)
     @Builder.Default
-    private Integer descargas = 0;
-    
-    @Column(name = "likes")
-    @Builder.Default
-    private Integer likes = 0;
-    
-    @Column(name = "destacado")
-    @Builder.Default
-    private Boolean destacado = false;
-    
-    @Column(name = "activo")
-    @Builder.Default
-    private Boolean activo = true;
+    private String estado = "DISPONIBLE"; // DISPONIBLE, VENDIDO, RESERVADO, INACTIVO
     
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -114,6 +105,6 @@ public class Beat {
     
     @Override
     public String toString() {
-        return "Beat{id=" + id + ", titulo='" + titulo + "', precio=" + precio + ", estado=" + estado + "}";
+        return "Beat{id=" + id + ", titulo='" + titulo + "', precio=" + precio + ", genero='" + genero + "', estado=" + estado + "}";
     }
 }

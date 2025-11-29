@@ -27,7 +27,10 @@ public class Rol {
     private Integer id;
     
     @Column(name = "tipo", nullable = false, unique = true, length = 50)
-    private String tipo; // "cliente" o "administrador"
+    private String tipo; // "cliente", "productor" o "administrador"
+    
+    @Column(name = "descripcion", length = 255)
+    private String descripcion;
     
     @Override
     public String toString() {
