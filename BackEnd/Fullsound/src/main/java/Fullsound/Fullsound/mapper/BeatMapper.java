@@ -28,8 +28,6 @@ public interface BeatMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "slug", ignore = true)
     @Mapping(target = "reproducciones", ignore = true)
-    @Mapping(target = "descargas", ignore = true)
-    @Mapping(target = "likes", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     Beat toEntity(BeatRequest request);
@@ -40,8 +38,6 @@ public interface BeatMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "slug", ignore = true)
     @Mapping(target = "reproducciones", ignore = true)
-    @Mapping(target = "descargas", ignore = true)
-    @Mapping(target = "likes", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
