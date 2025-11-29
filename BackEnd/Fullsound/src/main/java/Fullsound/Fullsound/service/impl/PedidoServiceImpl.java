@@ -72,7 +72,7 @@ public class PedidoServiceImpl implements PedidoService {
 
         // Crear items del pedido
         List<PedidoItem> items = new ArrayList<>();
-        BigDecimal total = BigDecimal.ZERO;
+        Integer total = 0;
 
         for (Beat beat : beats) {
             PedidoItem item = new PedidoItem();
@@ -83,7 +83,7 @@ public class PedidoServiceImpl implements PedidoService {
             item.setPrecioUnitario(beat.getPrecio());
             
             items.add(item);
-            total = total.add(beat.getPrecio());
+            total += beat.getPrecio();
         }
 
         pedido.setItems(items);

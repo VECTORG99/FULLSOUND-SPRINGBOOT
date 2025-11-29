@@ -3,8 +3,6 @@ package Fullsound.Fullsound.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.math.BigDecimal;
-
 /**
  * Entidad PedidoItem - Mapea a la tabla 'compra_detalle' en la base de datos.
  * Representa un item (beat) dentro de un pedido.
@@ -43,18 +41,18 @@ public class PedidoItem {
     @Builder.Default
     private Integer cantidad = 1;
     
-    @Column(name = "precio_unitario", nullable = false, precision = 10, scale = 2)
-    private BigDecimal precioUnitario; // Snapshot del precio al momento de la compra
+    @Column(name = "precio_unitario", nullable = false)
+    private Integer precioUnitario; // Snapshot del precio al momento de la compra
     
     /**
      * Calcula el subtotal del item.
      */
     @Transient
-    public BigDecimal getSubtotal() {
+    public Integer getSubtotal() {
         if (precioUnitario == null || cantidad == null) {
-            return BigDecimal.ZERO;
+            return 0;
         }
-        return precioUnitario.multiply(BigDecimal.valueOf(cantidad));
+        return precioUnitario * cantidad;
     }
     
     @Override

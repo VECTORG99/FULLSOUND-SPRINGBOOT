@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -44,12 +43,12 @@ public class Pago {
     @Builder.Default
     private EstadoPago estado = EstadoPago.PENDIENTE;
     
-    @Column(name = "monto", nullable = false, precision = 10, scale = 2)
-    private BigDecimal monto;
+    @Column(name = "monto", nullable = false)
+    private Integer monto;
     
     @Column(name = "moneda", length = 3)
     @Builder.Default
-    private String moneda = "USD";
+    private String moneda = "CLP";
     
     @Column(name = "metadata", columnDefinition = "TEXT")
     private String metadata; // JSON con información adicional

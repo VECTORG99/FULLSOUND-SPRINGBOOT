@@ -5,8 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-
 /**
  * DTO de respuesta para PedidoItem.
  * 
@@ -23,6 +21,6 @@ public class PedidoItemResponse {
     private Integer beatId;
     private String nombreItem;
     private Integer cantidad;
-    private BigDecimal precioUnitario;
-    private BigDecimal subtotal;
+    private Integer precioUnitario;
+    private Integer subtotal;
 }

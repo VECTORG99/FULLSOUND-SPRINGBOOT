@@ -102,7 +102,7 @@ public class BeatServiceImpl implements BeatService {
     
     @Override
     @Transactional(readOnly = true)
-    public List<BeatResponse> filterByPrice(BigDecimal min, BigDecimal max) {
+    public List<BeatResponse> filterByPrice(Integer min, Integer max) {
         return beatRepository.findByPrecioBetweenAndActivoTrue(min, max).stream()
                 .map(beatMapper::toResponse)
                 .collect(Collectors.toList());

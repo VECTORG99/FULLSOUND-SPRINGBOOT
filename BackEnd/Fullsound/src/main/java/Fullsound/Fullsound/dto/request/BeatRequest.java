@@ -7,8 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-
 /**
  * DTO para petición de creación/actualización de beat.
  * 
@@ -30,8 +28,8 @@ public class BeatRequest {
     private String artista;
     
     @NotNull(message = "El precio es obligatorio")
-    @DecimalMin(value = "0.0", inclusive = false, message = "El precio debe ser mayor a 0")
-    private BigDecimal precio;
+    @Min(value = 1, message = "El precio debe ser mayor a 0")
+    private Integer precio;
     
     @Min(value = 1, message = "El BPM debe ser al menos 1")
     @Max(value = 300, message = "El BPM no puede exceder 300")

@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,13 +66,13 @@ public interface BeatRepository extends JpaRepository<Beat, Integer> {
     List<Beat> findByEstadoAndActivoTrue(EstadoBeat estado);
     
     /**
-     * Busca beats por rango de precio.
+     * Buscar beats por rango de precio.
      * 
      * @param precioMin precio mínimo
      * @param precioMax precio máximo
      * @return lista de beats en el rango de precio
      */
-    List<Beat> findByPrecioBetweenAndActivoTrue(BigDecimal precioMin, BigDecimal precioMax);
+    List<Beat> findByPrecioBetweenAndActivoTrue(Integer precioMin, Integer precioMax);
     
     /**
      * Busca beats por BPM.

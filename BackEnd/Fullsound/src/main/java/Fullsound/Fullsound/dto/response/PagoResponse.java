@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -26,7 +25,7 @@ public class PagoResponse {
     private String stripePaymentIntentId;
     private String stripeChargeId;
     private EstadoPago estado;
-    private BigDecimal monto;
+    private Integer monto;
     private String moneda;
     private LocalDateTime createdAt;
     private LocalDateTime processedAt;

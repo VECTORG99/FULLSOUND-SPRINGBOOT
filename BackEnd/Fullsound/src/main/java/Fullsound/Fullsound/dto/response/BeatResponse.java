@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -25,7 +24,7 @@ public class BeatResponse {
     private String titulo;
     private String slug;
     private String artista;
-    private BigDecimal precio;
+    private Integer precio;
     private String precioFormateado;
     private Integer bpm;
     private String tonalidad;

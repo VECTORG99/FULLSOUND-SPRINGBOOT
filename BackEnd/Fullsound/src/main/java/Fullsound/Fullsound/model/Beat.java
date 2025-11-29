@@ -6,7 +6,6 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -41,8 +40,8 @@ public class Beat {
     @Column(name = "artista", length = 100)
     private String artista;
     
-    @Column(name = "precio", nullable = false, precision = 10, scale = 2)
-    private BigDecimal precio;
+    @Column(name = "precio", nullable = false)
+    private Integer precio;
     
     @Column(name = "bpm")
     private Integer bpm;

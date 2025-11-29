@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -27,7 +26,7 @@ public class PedidoResponse {
     private String numeroPedido;
     private UsuarioResponse usuario;
     private LocalDateTime fechaCompra;
-    private BigDecimal total;
+    private Integer total;
     private EstadoPedido estado;
     private MetodoPago metodoPago;
     private List<PedidoItemResponse> items;

@@ -21,7 +21,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -57,8 +56,8 @@ public class PagoServiceImpl implements PagoService {
         }
 
         try {
-            // Convertir total a centavos (Stripe trabaja en centavos)
-            long amountInCents = pedido.getTotal().multiply(new BigDecimal("100")).longValue();
+            // El monto ya está en CLP (pesos chilenos), Stripe lo recibe directamente
+            long amount = pedido.getTotal().longValue();
 
             // Crear metadata
             Map<String, String> metadata = new HashMap<>();
@@ -68,8 +67,8 @@ public class PagoServiceImpl implements PagoService {
 
             // Crear Payment Intent en Stripe
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                    .setAmount(amountInCents)
-                    .setCurrency("usd")
+                    .setAmount(amount)
+                    .setCurrency("clp")
                     .setDescription("Compra de beats - Pedido: " + pedido.getNumeroPedido())
                     .putAllMetadata(metadata)
                     .setConfirm(false) // No confirmar automáticamente

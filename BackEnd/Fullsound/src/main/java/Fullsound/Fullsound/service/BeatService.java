@@ -53,7 +53,7 @@ public interface BeatService {
     /**
      * Filtra beats por precio.
      */
-    List<BeatResponse> filterByPrice(BigDecimal min, BigDecimal max);
+    List<BeatResponse> filterByPrice(Integer min, Integer max);
     
     /**
      * Filtra beats por BPM.

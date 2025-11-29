@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -120,8 +119,8 @@ public class BeatController {
      */
     @GetMapping("/filter/price")
     public ResponseEntity<List<BeatResponse>> filterByPrice(
-            @RequestParam BigDecimal min, 
-            @RequestParam BigDecimal max) {
+            @RequestParam Integer min, 
+            @RequestParam Integer max) {
         List<BeatResponse> responses = beatService.filterByPrice(min, max);
         return ResponseEntity.ok(responses);
     }

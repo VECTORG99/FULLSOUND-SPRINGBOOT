@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,8 +44,8 @@ public class Pedido {
     @Column(name = "fecha_compra", nullable = false, updatable = false)
     private LocalDateTime fechaCompra;
     
-    @Column(name = "total", nullable = false, precision = 10, scale = 2)
-    private BigDecimal total;
+    @Column(name = "total", nullable = false)
+    private Integer total;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", length = 20)
