@@ -15,7 +15,7 @@ FrontEnd/package-lock.json
 
 # Backend (Spring Boot/Maven)
 BackEnd/Fullsound/target/
-BackEnd/Fullsound/.mvn/
+BackEnd/Fullsound/.mvn/wrapper/maven-wrapper.jar
 BackEnd/Fullsound/mvnw
 BackEnd/Fullsound/mvnw.cmd
 BackEnd/Fullsound/.idea/
@@ -63,7 +63,7 @@ desktop.ini
 logs/
 *.log
 
-# Maven wrapper
+# Maven wrapper (el .jar se ignora, pero maven-wrapper.properties NO)
 .mvn/wrapper/maven-wrapper.jar
 
 # ========================================
