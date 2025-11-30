@@ -51,7 +51,7 @@ public class PagoServiceImpl implements PagoService {
 
         // Validar que el pedido no tenga un pago exitoso previo
         if (pagoRepository.findByPedido(pedido).stream()
-                .anyMatch(p -> p.getEstado() == EstadoPago.EXITOSO)) {
+                .anyMatch(p -> p.getEstado() == EstadoPago.EXITOSO.name())) {
             throw new BadRequestException("El pedido ya tiene un pago exitoso");
         }
 
@@ -80,7 +80,7 @@ public class PagoServiceImpl implements PagoService {
             Pago pago = new Pago();
             pago.setPedido(pedido);
             pago.setStripePaymentIntentId(paymentIntent.getId());
-            pago.setEstado(EstadoPago.PENDIENTE);
+            pago.setEstado(EstadoPago.PENDIENTE.name());
             pago.setMonto(pedido.getTotal());
             pago.setMoneda("USD");
             pago.setCreatedAt(LocalDateTime.now());
@@ -89,7 +89,7 @@ public class PagoServiceImpl implements PagoService {
             Pago pagoGuardado = pagoRepository.save(pago);
 
             // Actualizar estado del pedido
-            pedido.setEstado(EstadoPedido.PROCESANDO);
+            pedido.setEstado(EstadoPedido.PROCESANDO.name());
             pedidoRepository.save(pedido);
 
             return pagoMapper.toResponse(pagoGuardado);
@@ -109,7 +109,7 @@ public class PagoServiceImpl implements PagoService {
 
         // Actualizar información del pago
         pago.setStripeChargeId(stripeChargeId);
-        pago.setEstado(EstadoPago.PROCESANDO);
+        pago.setEstado(EstadoPago.PROCESANDO.name());
         pago.setProcessedAt(LocalDateTime.now());
 
         Pago pagoActualizado = pagoRepository.save(pago);
@@ -139,25 +139,25 @@ public class PagoServiceImpl implements PagoService {
 
             // Verificar estado
             if ("succeeded".equals(paymentIntent.getStatus())) {
-                pago.setEstado(EstadoPago.EXITOSO);
+                pago.setEstado(EstadoPago.EXITOSO.name());
                 pago.setStripeChargeId(paymentIntent.getLatestCharge());
                 pago.setProcessedAt(LocalDateTime.now());
 
                 // Actualizar pedido a COMPLETADO
                 Pedido pedido = pago.getPedido();
-                pedido.setEstado(EstadoPedido.COMPLETADO);
+                pedido.setEstado(EstadoPedido.COMPLETADO.name());
                 pedidoRepository.save(pedido);
 
             } else if ("canceled".equals(paymentIntent.getStatus())) {
-                pago.setEstado(EstadoPago.FALLIDO);
+                pago.setEstado(EstadoPago.FALLIDO.name());
 
                 // Actualizar pedido a CANCELADO
                 Pedido pedido = pago.getPedido();
-                pedido.setEstado(EstadoPedido.CANCELADO);
+                pedido.setEstado(EstadoPedido.CANCELADO.name());
                 pedidoRepository.save(pedido);
 
             } else {
-                pago.setEstado(EstadoPago.PROCESANDO);
+                pago.setEstado(EstadoPago.PROCESANDO.name());
             }
 
             Pago pagoActualizado = pagoRepository.save(pago);

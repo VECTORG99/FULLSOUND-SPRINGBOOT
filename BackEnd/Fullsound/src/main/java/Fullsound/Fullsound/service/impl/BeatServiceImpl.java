@@ -2,7 +2,6 @@ package Fullsound.Fullsound.service.impl;
 
 import Fullsound.Fullsound.dto.request.BeatRequest;
 import Fullsound.Fullsound.dto.response.BeatResponse;
-import Fullsound.Fullsound.enums.EstadoBeat;
 import Fullsound.Fullsound.exception.ResourceNotFoundException;
 import Fullsound.Fullsound.mapper.BeatMapper;
 import Fullsound.Fullsound.model.Beat;
@@ -12,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -79,7 +77,8 @@ public class BeatServiceImpl implements BeatService {
     @Override
     @Transactional(readOnly = true)
     public List<BeatResponse> getAllActive() {
-        return beatRepository.findByActivoTrue().stream()
+        return beatRepository.findAll().stream()
+                .filter(Beat::getActivo)
                 .map(beatMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -87,7 +86,8 @@ public class BeatServiceImpl implements BeatService {
     @Override
     @Transactional(readOnly = true)
     public List<BeatResponse> getFeatured() {
-        return beatRepository.findByDestacadoTrueAndActivoTrue().stream()
+        return beatRepository.findAll().stream()
+                .filter(Beat::getActivo)
                 .map(beatMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -103,7 +103,8 @@ public class BeatServiceImpl implements BeatService {
     @Override
     @Transactional(readOnly = true)
     public List<BeatResponse> filterByPrice(Integer min, Integer max) {
-        return beatRepository.findByPrecioBetweenAndActivoTrue(min, max).stream()
+        return beatRepository.findAll().stream()
+                .filter(beat -> beat.getActivo() && beat.getPrecio() >= min && beat.getPrecio() <= max)
                 .map(beatMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -111,7 +112,8 @@ public class BeatServiceImpl implements BeatService {
     @Override
     @Transactional(readOnly = true)
     public List<BeatResponse> filterByBpm(Integer min, Integer max) {
-        return beatRepository.findByBpmBetweenAndActivoTrue(min, max).stream()
+        return beatRepository.findAll().stream()
+                .filter(beat -> beat.getActivo() && beat.getBpm() != null && beat.getBpm() >= min && beat.getBpm() <= max)
                 .map(beatMapper::toResponse)
                 .collect(Collectors.toList());
     }

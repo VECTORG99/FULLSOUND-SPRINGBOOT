@@ -19,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +55,7 @@ public class PedidoServiceImpl implements PedidoService {
                     .orElseThrow(() -> new ResourceNotFoundException("Beat", "id", beatId.toString()));
             
             // Validar que el beat está disponible
-            if (!beat.getActivo() || beat.getEstado() != EstadoBeat.DISPONIBLE) {
+            if (!beat.getActivo() || !EstadoBeat.DISPONIBLE.name().equals(beat.getEstado())) {
                 throw new BadRequestException("El beat '" + beat.getTitulo() + "' no está disponible");
             }
             
@@ -67,8 +66,8 @@ public class PedidoServiceImpl implements PedidoService {
         Pedido pedido = new Pedido();
         pedido.setUsuario(usuario);
         pedido.setFechaCompra(LocalDateTime.now());
-        pedido.setEstado(EstadoPedido.PENDIENTE);
-        pedido.setMetodoPago(request.getMetodoPago());
+        pedido.setEstado(EstadoPedido.PENDIENTE.name());
+        pedido.setMetodoPago(request.getMetodoPago().name());
 
         // Crear items del pedido
         List<PedidoItem> items = new ArrayList<>();
@@ -139,13 +138,13 @@ public class PedidoServiceImpl implements PedidoService {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", "id", id.toString()));
         
-        pedido.setEstado(nuevoEstado);
+        pedido.setEstado(nuevoEstado.name());
         
         // Si el pedido se completa, marcar beats como vendidos
         if (nuevoEstado == EstadoPedido.COMPLETADO) {
             for (PedidoItem item : pedido.getItems()) {
                 Beat beat = item.getBeat();
-                beat.setEstado(EstadoBeat.VENDIDO);
+                beat.setEstado(EstadoBeat.VENDIDO.name());
                 beat.setActivo(false); // Ya no está disponible
                 beatRepository.save(beat);
             }
@@ -155,8 +154,8 @@ public class PedidoServiceImpl implements PedidoService {
         if (nuevoEstado == EstadoPedido.CANCELADO || nuevoEstado == EstadoPedido.REEMBOLSADO) {
             for (PedidoItem item : pedido.getItems()) {
                 Beat beat = item.getBeat();
-                if (beat.getEstado() == EstadoBeat.VENDIDO || beat.getEstado() == EstadoBeat.RESERVADO) {
-                    beat.setEstado(EstadoBeat.DISPONIBLE);
+                if (EstadoBeat.VENDIDO.name().equals(beat.getEstado()) || EstadoBeat.RESERVADO.name().equals(beat.getEstado())) {
+                    beat.setEstado(EstadoBeat.DISPONIBLE.name());
                     beat.setActivo(true);
                     beatRepository.save(beat);
                 }
