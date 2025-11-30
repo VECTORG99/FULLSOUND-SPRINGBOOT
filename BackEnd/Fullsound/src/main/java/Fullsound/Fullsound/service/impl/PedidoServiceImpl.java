@@ -2,8 +2,6 @@ package Fullsound.Fullsound.service.impl;
 
 import Fullsound.Fullsound.dto.request.PedidoRequest;
 import Fullsound.Fullsound.dto.response.PedidoResponse;
-import Fullsound.Fullsound.enums.EstadoBeat;
-import Fullsound.Fullsound.enums.EstadoPedido;
 import Fullsound.Fullsound.exception.BadRequestException;
 import Fullsound.Fullsound.exception.ResourceNotFoundException;
 import Fullsound.Fullsound.mapper.PedidoMapper;
@@ -55,7 +53,7 @@ public class PedidoServiceImpl implements PedidoService {
                     .orElseThrow(() -> new ResourceNotFoundException("Beat", "id", beatId.toString()));
             
             // Validar que el beat está disponible
-            if (!beat.getActivo() || !EstadoBeat.DISPONIBLE.name().equals(beat.getEstado())) {
+            if (!"DISPONIBLE".equals(beat.getEstado())) {
                 throw new BadRequestException("El beat '" + beat.getTitulo() + "' no está disponible");
             }
             
@@ -66,8 +64,8 @@ public class PedidoServiceImpl implements PedidoService {
         Pedido pedido = new Pedido();
         pedido.setUsuario(usuario);
         pedido.setFechaCompra(LocalDateTime.now());
-        pedido.setEstado(EstadoPedido.PENDIENTE.name());
-        pedido.setMetodoPago(request.getMetodoPago().name());
+        pedido.setEstado("PENDIENTE");
+        pedido.setMetodoPago(request.getMetodoPago());
 
         // Crear items del pedido
         List<PedidoItem> items = new ArrayList<>();
@@ -134,29 +132,26 @@ public class PedidoServiceImpl implements PedidoService {
     @Override
     @Transactional
     public PedidoResponse updateEstado(Integer id, String estado) {
-        EstadoPedido nuevoEstado = EstadoPedido.valueOf(estado);
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", "id", id.toString()));
         
-        pedido.setEstado(nuevoEstado.name());
+        pedido.setEstado(estado);
         
         // Si el pedido se completa, marcar beats como vendidos
-        if (nuevoEstado == EstadoPedido.COMPLETADO) {
+        if ("COMPLETADO".equals(estado)) {
             for (PedidoItem item : pedido.getItems()) {
                 Beat beat = item.getBeat();
-                beat.setEstado(EstadoBeat.VENDIDO.name());
-                beat.setActivo(false); // Ya no está disponible
+                beat.setEstado("VENDIDO");
                 beatRepository.save(beat);
             }
         }
         
         // Si el pedido se cancela, liberar beats
-        if (nuevoEstado == EstadoPedido.CANCELADO || nuevoEstado == EstadoPedido.REEMBOLSADO) {
+        if ("CANCELADO".equals(estado) || "REEMBOLSADO".equals(estado)) {
             for (PedidoItem item : pedido.getItems()) {
                 Beat beat = item.getBeat();
-                if (EstadoBeat.VENDIDO.name().equals(beat.getEstado()) || EstadoBeat.RESERVADO.name().equals(beat.getEstado())) {
-                    beat.setEstado(EstadoBeat.DISPONIBLE.name());
-                    beat.setActivo(true);
+                if ("VENDIDO".equals(beat.getEstado()) || "RESERVADO".equals(beat.getEstado())) {
+                    beat.setEstado("DISPONIBLE");
                     beatRepository.save(beat);
                 }
             }

@@ -2,7 +2,6 @@ package Fullsound.Fullsound.controller;
 
 import Fullsound.Fullsound.dto.request.PedidoRequest;
 import Fullsound.Fullsound.dto.response.PedidoResponse;
-import Fullsound.Fullsound.enums.EstadoPedido;
 import Fullsound.Fullsound.exception.ResourceNotFoundException;
 import Fullsound.Fullsound.model.Usuario;
 import Fullsound.Fullsound.repository.UsuarioRepository;
@@ -106,15 +105,15 @@ public class PedidoController {
      * Actualiza el estado de un pedido (solo administradores).
      *
      * @param id ID del pedido
-     * @param estado nuevo estado
+     * @param estado nuevo estado (PENDIENTE, PROCESANDO, COMPLETADO, CANCELADO, REEMBOLSADO)
      * @return pedido actualizado
      */
     @PatchMapping("/{id}/estado")
     @PreAuthorize("hasAuthority('administrador')")
     public ResponseEntity<PedidoResponse> updateEstado(
             @PathVariable Integer id,
-            @RequestParam EstadoPedido estado) {
-        PedidoResponse response = pedidoService.updateEstado(id, estado.name());
+            @RequestParam String estado) {
+        PedidoResponse response = pedidoService.updateEstado(id, estado);
         return ResponseEntity.ok(response);
     }
 }

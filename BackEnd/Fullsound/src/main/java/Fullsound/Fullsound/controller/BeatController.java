@@ -4,6 +4,14 @@ import Fullsound.Fullsound.dto.request.BeatRequest;
 import Fullsound.Fullsound.dto.response.BeatResponse;
 import Fullsound.Fullsound.dto.response.MessageResponse;
 import Fullsound.Fullsound.service.BeatService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +28,7 @@ import java.util.List;
 @RequestMapping("/api/beats")
 @RequiredArgsConstructor
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000", "http://localhost:4200", "http://localhost:8080"})
+@Tag(name = "🎵 Beats", description = "Gestión del catálogo de beats musicales")
 public class BeatController {
 
     private final BeatService beatService;
@@ -30,6 +39,21 @@ public class BeatController {
      * @param request datos del beat
      * @return beat creado
      */
+    @Operation(
+        summary = "Crear nuevo beat",
+        description = "Registra un nuevo beat en el catálogo. Requiere rol de administrador.",
+        security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "201",
+            description = "Beat creado exitosamente",
+            content = @Content(schema = @Schema(implementation = BeatResponse.class))
+        ),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content),
+        @ApiResponse(responseCode = "401", description = "No autenticado", content = @Content),
+        @ApiResponse(responseCode = "403", description = "Sin permisos de administrador", content = @Content)
+    })
     @PostMapping
     @PreAuthorize("hasAuthority('administrador')")
     public ResponseEntity<BeatResponse> create(@Valid @RequestBody BeatRequest request) {
@@ -57,8 +81,23 @@ public class BeatController {
      * @param id ID del beat
      * @return beat encontrado
      */
+    @Operation(
+        summary = "Obtener beat por ID",
+        description = "Busca y devuelve un beat específico por su identificador."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Beat encontrado",
+            content = @Content(schema = @Schema(implementation = BeatResponse.class))
+        ),
+        @ApiResponse(responseCode = "404", description = "Beat no encontrado", content = @Content)
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<BeatResponse> getById(@PathVariable Integer id) {
+    public ResponseEntity<BeatResponse> getById(
+        @Parameter(description = "ID del beat", required = true, example = "1")
+        @PathVariable Integer id
+    ) {
         BeatResponse response = beatService.getById(id);
         return ResponseEntity.ok(response);
     }
@@ -80,6 +119,15 @@ public class BeatController {
      *
      * @return lista de beats activos
      */
+    @Operation(
+        summary = "Listar beats activos",
+        description = "Obtiene el catálogo completo de beats disponibles para compra."
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "Lista de beats obtenida exitosamente",
+        content = @Content(schema = @Schema(implementation = BeatResponse.class))
+    )
     @GetMapping
     public ResponseEntity<List<BeatResponse>> getAllActive() {
         List<BeatResponse> responses = beatService.getAllActive();

@@ -1,6 +1,5 @@
 package Fullsound.Fullsound.repository;
 
-import Fullsound.Fullsound.enums.EstadoPago;
 import Fullsound.Fullsound.model.Pago;
 import Fullsound.Fullsound.model.Pedido;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,10 +10,11 @@ import java.util.Optional;
 
 /**
  * Repository para la entidad Pago.
+ * Adaptado al schema de PostgreSQL.
  * 
  * @author VECTORG99
- * @version 1.0.0
- * @since 2025-11-13
+ * @version 2.0.0
+ * @since 2025-11-30
  */
 @Repository
 public interface PagoRepository extends JpaRepository<Pago, Integer> {
@@ -46,10 +46,10 @@ public interface PagoRepository extends JpaRepository<Pago, Integer> {
     /**
      * Busca pagos por estado.
      * 
-     * @param estado el estado del pago
+     * @param estado el estado del pago (PENDIENTE, COMPLETADO, FALLIDO, REEMBOLSADO)
      * @return lista de pagos con ese estado
      */
-    List<Pago> findByEstado(EstadoPago estado);
+    List<Pago> findByEstado(String estado);
     
     /**
      * Verifica si existe un pago para un pedido específico.

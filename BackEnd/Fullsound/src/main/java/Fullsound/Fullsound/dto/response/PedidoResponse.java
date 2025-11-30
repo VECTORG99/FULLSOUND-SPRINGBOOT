@@ -1,7 +1,5 @@
 package Fullsound.Fullsound.dto.response;
 
-import Fullsound.Fullsound.enums.EstadoPedido;
-import Fullsound.Fullsound.enums.MetodoPago;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,10 +10,11 @@ import java.util.List;
 
 /**
  * DTO de respuesta para Pedido.
+ * Adaptado al schema de PostgreSQL.
  * 
  * @author VECTORG99
- * @version 1.0.0
- * @since 2025-11-13
+ * @version 2.0.0
+ * @since 2025-11-30
  */
 @Data
 @NoArgsConstructor
@@ -27,7 +26,7 @@ public class PedidoResponse {
     private UsuarioResponse usuario;
     private LocalDateTime fechaCompra;
     private Integer total;
-    private EstadoPedido estado;
-    private MetodoPago metodoPago;
+    private String estado; // PENDIENTE, PROCESANDO, COMPLETADO, CANCELADO, REEMBOLSADO
+    private String metodoPago; // STRIPE, PAYPAL, TRANSFERENCIA
     private List<PedidoItemResponse> items;
 }

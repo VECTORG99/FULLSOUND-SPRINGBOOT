@@ -1,6 +1,5 @@
 package Fullsound.Fullsound.repository;
 
-import Fullsound.Fullsound.enums.EstadoBeat;
 import Fullsound.Fullsound.model.Beat;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,10 +11,11 @@ import java.util.Optional;
 
 /**
  * Repository para la entidad Beat.
+ * Adaptado al schema de PostgreSQL.
  * 
  * @author VECTORG99
- * @version 1.0.0
- * @since 2025-11-13
+ * @version 2.0.0
+ * @since 2025-11-30
  */
 @Repository
 public interface BeatRepository extends JpaRepository<Beat, Integer> {
@@ -31,39 +31,18 @@ public interface BeatRepository extends JpaRepository<Beat, Integer> {
     /**
      * Busca beats por estado.
      * 
-     * @param estado el estado del beat
+     * @param estado el estado del beat (DISPONIBLE, VENDIDO, RESERVADO, INACTIVO)
      * @return lista de beats con ese estado
      */
-    List<Beat> findByEstado(EstadoBeat estado);
+    List<Beat> findByEstado(String estado);
     
     /**
-     * Busca beats activos.
-     * 
-     * @param activo true para activos, false para inactivos
-     * @return lista de beats
-     */
-    List<Beat> findByActivo(Boolean activo);
-    
-    /**
-     * Busca beats activos (método simplificado).
-     * 
-     * @return lista de beats activos
-     */
-    List<Beat> findByActivoTrue();
-    
-    /**
-     * Busca beats destacados.
-     * 
-     * @return lista de beats destacados
-     */
-    List<Beat> findByDestacadoTrueAndActivoTrue();
-    
-    /**
-     * Busca beats disponibles y activos.
+     * Busca beats disponibles (estado DISPONIBLE).
      * 
      * @return lista de beats disponibles
      */
-    List<Beat> findByEstadoAndActivoTrue(EstadoBeat estado);
+    @Query("SELECT b FROM Beat b WHERE b.estado = 'DISPONIBLE'")
+    List<Beat> findAllAvailable();
     
     /**
      * Buscar beats por rango de precio.
@@ -72,7 +51,7 @@ public interface BeatRepository extends JpaRepository<Beat, Integer> {
      * @param precioMax precio máximo
      * @return lista de beats en el rango de precio
      */
-    List<Beat> findByPrecioBetweenAndActivoTrue(Integer precioMin, Integer precioMax);
+    List<Beat> findByPrecioBetween(Integer precioMin, Integer precioMax);
     
     /**
      * Busca beats por BPM.
@@ -81,7 +60,7 @@ public interface BeatRepository extends JpaRepository<Beat, Integer> {
      * @param bpmMax BPM máximo
      * @return lista de beats en el rango de BPM
      */
-    List<Beat> findByBpmBetweenAndActivoTrue(Integer bpmMin, Integer bpmMax);
+    List<Beat> findByBpmBetween(Integer bpmMin, Integer bpmMax);
     
     /**
      * Busca beats por tonalidad.
@@ -89,26 +68,27 @@ public interface BeatRepository extends JpaRepository<Beat, Integer> {
      * @param tonalidad la tonalidad (ej: "C", "Am", "F#")
      * @return lista de beats con esa tonalidad
      */
-    List<Beat> findByTonalidadAndActivoTrue(String tonalidad);
+    List<Beat> findByTonalidad(String tonalidad);
     
     /**
-     * Busca beats por mood.
+     * Busca beats por género.
      * 
-     * @param mood el mood (ej: "happy", "dark", "epic")
-     * @return lista de beats con ese mood
+     * @param genero el género (Trap, Lo-Fi, Hip Hop, etc.)
+     * @return lista de beats con ese género
      */
-    List<Beat> findByMoodContainingIgnoreCaseAndActivoTrue(String mood);
+    List<Beat> findByGeneroContainingIgnoreCase(String genero);
     
     /**
-     * Búsqueda de beats por título o artista.
+     * Búsqueda de beats por título, artista o etiquetas.
      * 
      * @param query término de búsqueda
      * @return lista de beats que coinciden
      */
-    @Query("SELECT b FROM Beat b WHERE b.activo = true AND " +
+    @Query("SELECT b FROM Beat b WHERE b.estado = 'DISPONIBLE' AND " +
            "(LOWER(b.titulo) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(b.artista) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-           "LOWER(b.tags) LIKE LOWER(CONCAT('%', :query, '%')))")
+           "LOWER(b.etiquetas) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(b.genero) LIKE LOWER(CONCAT('%', :query, '%')))")
     List<Beat> search(@Param("query") String query);
     
     /**
@@ -117,24 +97,15 @@ public interface BeatRepository extends JpaRepository<Beat, Integer> {
      * @param limit número máximo de resultados
      * @return lista de beats más reproducidos
      */
-    @Query("SELECT b FROM Beat b WHERE b.activo = true ORDER BY b.reproducciones DESC LIMIT :limit")
+    @Query("SELECT b FROM Beat b WHERE b.estado = 'DISPONIBLE' ORDER BY b.reproducciones DESC LIMIT :limit")
     List<Beat> findTopByOrderByReproduccionesDesc(@Param("limit") int limit);
     
     /**
-     * Obtiene los beats más descargados.
+     * Obtiene los beats más recientes.
      * 
      * @param limit número máximo de resultados
-     * @return lista de beats más descargados
+     * @return lista de beats más recientes
      */
-    @Query("SELECT b FROM Beat b WHERE b.activo = true ORDER BY b.descargas DESC LIMIT :limit")
-    List<Beat> findTopByOrderByDescargasDesc(@Param("limit") int limit);
-    
-    /**
-     * Obtiene los beats con más likes.
-     * 
-     * @param limit número máximo de resultados
-     * @return lista de beats con más likes
-     */
-    @Query("SELECT b FROM Beat b WHERE b.activo = true ORDER BY b.likes DESC LIMIT :limit")
-    List<Beat> findTopByOrderByLikesDesc(@Param("limit") int limit);
+    @Query("SELECT b FROM Beat b WHERE b.estado = 'DISPONIBLE' ORDER BY b.createdAt DESC LIMIT :limit")
+    List<Beat> findTopByOrderByCreatedAtDesc(@Param("limit") int limit);
 }

@@ -2,8 +2,6 @@ package Fullsound.Fullsound.service.impl;
 
 import Fullsound.Fullsound.dto.request.PagoRequest;
 import Fullsound.Fullsound.dto.response.PagoResponse;
-import Fullsound.Fullsound.enums.EstadoPago;
-import Fullsound.Fullsound.enums.EstadoPedido;
 import Fullsound.Fullsound.exception.BadRequestException;
 import Fullsound.Fullsound.exception.ResourceNotFoundException;
 import Fullsound.Fullsound.mapper.PagoMapper;
@@ -51,7 +49,7 @@ public class PagoServiceImpl implements PagoService {
 
         // Validar que el pedido no tenga un pago exitoso previo
         if (pagoRepository.findByPedido(pedido).stream()
-                .anyMatch(p -> p.getEstado() == EstadoPago.EXITOSO.name())) {
+                .anyMatch(p -> "COMPLETADO".equals(p.getEstado()))) {
             throw new BadRequestException("El pedido ya tiene un pago exitoso");
         }
 
@@ -80,7 +78,7 @@ public class PagoServiceImpl implements PagoService {
             Pago pago = new Pago();
             pago.setPedido(pedido);
             pago.setStripePaymentIntentId(paymentIntent.getId());
-            pago.setEstado(EstadoPago.PENDIENTE.name());
+            pago.setEstado("PENDIENTE");
             pago.setMonto(pedido.getTotal());
             pago.setMoneda("USD");
             pago.setCreatedAt(LocalDateTime.now());
@@ -89,7 +87,7 @@ public class PagoServiceImpl implements PagoService {
             Pago pagoGuardado = pagoRepository.save(pago);
 
             // Actualizar estado del pedido
-            pedido.setEstado(EstadoPedido.PROCESANDO.name());
+            pedido.setEstado("PROCESANDO");
             pedidoRepository.save(pedido);
 
             return pagoMapper.toResponse(pagoGuardado);
@@ -109,7 +107,7 @@ public class PagoServiceImpl implements PagoService {
 
         // Actualizar información del pago
         pago.setStripeChargeId(stripeChargeId);
-        pago.setEstado(EstadoPago.PROCESANDO.name());
+        pago.setEstado("PROCESANDO");
         pago.setProcessedAt(LocalDateTime.now());
 
         Pago pagoActualizado = pagoRepository.save(pago);
@@ -139,25 +137,25 @@ public class PagoServiceImpl implements PagoService {
 
             // Verificar estado
             if ("succeeded".equals(paymentIntent.getStatus())) {
-                pago.setEstado(EstadoPago.EXITOSO.name());
+                pago.setEstado("COMPLETADO");
                 pago.setStripeChargeId(paymentIntent.getLatestCharge());
                 pago.setProcessedAt(LocalDateTime.now());
 
                 // Actualizar pedido a COMPLETADO
                 Pedido pedido = pago.getPedido();
-                pedido.setEstado(EstadoPedido.COMPLETADO.name());
+                pedido.setEstado("COMPLETADO");
                 pedidoRepository.save(pedido);
 
             } else if ("canceled".equals(paymentIntent.getStatus())) {
-                pago.setEstado(EstadoPago.FALLIDO.name());
+                pago.setEstado("FALLIDO");
 
                 // Actualizar pedido a CANCELADO
                 Pedido pedido = pago.getPedido();
-                pedido.setEstado(EstadoPedido.CANCELADO.name());
+                pedido.setEstado("CANCELADO");
                 pedidoRepository.save(pedido);
 
             } else {
-                pago.setEstado(EstadoPago.PROCESANDO.name());
+                pago.setEstado("PROCESANDO");
             }
 
             Pago pagoActualizado = pagoRepository.save(pago);

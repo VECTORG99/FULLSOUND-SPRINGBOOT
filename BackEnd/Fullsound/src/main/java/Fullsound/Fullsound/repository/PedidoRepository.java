@@ -1,6 +1,5 @@
 package Fullsound.Fullsound.repository;
 
-import Fullsound.Fullsound.enums.EstadoPedido;
 import Fullsound.Fullsound.model.Pedido;
 import Fullsound.Fullsound.model.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,10 +13,11 @@ import java.util.Optional;
 
 /**
  * Repository para la entidad Pedido.
+ * Adaptado al schema de PostgreSQL.
  * 
  * @author VECTORG99
- * @version 1.0.0
- * @since 2025-11-13
+ * @version 2.0.0
+ * @since 2025-11-30
  */
 @Repository
 public interface PedidoRepository extends JpaRepository<Pedido, Integer> {
@@ -42,18 +42,18 @@ public interface PedidoRepository extends JpaRepository<Pedido, Integer> {
      * Busca pedidos por usuario y estado.
      * 
      * @param usuario el usuario
-     * @param estado el estado del pedido
+     * @param estado el estado del pedido (PENDIENTE, PROCESANDO, COMPLETADO, etc.)
      * @return lista de pedidos
      */
-    List<Pedido> findByUsuarioAndEstado(Usuario usuario, EstadoPedido estado);
+    List<Pedido> findByUsuarioAndEstado(Usuario usuario, String estado);
     
     /**
      * Busca pedidos por estado.
      * 
-     * @param estado el estado del pedido
+     * @param estado el estado del pedido (PENDIENTE, PROCESANDO, COMPLETADO, etc.)
      * @return lista de pedidos con ese estado
      */
-    List<Pedido> findByEstadoOrderByFechaCompraDesc(EstadoPedido estado);
+    List<Pedido> findByEstadoOrderByFechaCompraDesc(String estado);
     
     /**
      * Busca pedidos realizados en un rango de fechas.
