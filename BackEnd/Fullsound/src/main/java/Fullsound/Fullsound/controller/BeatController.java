@@ -215,14 +215,15 @@ public class BeatController {
 
     /**
      * Incrementa el contador de likes de un beat.
+     * NOTA: Funcionalidad deshabilitada - columna 'likes' eliminada del schema PostgreSQL
      *
      * @param id ID del beat
-     * @return beat actualizado
+     * @return error 501 Not Implemented
      */
     @PostMapping("/{id}/like")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> incrementLikes(@PathVariable Integer id) {
-        beatService.incrementLikes(id);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<MessageResponse> incrementLikes(@PathVariable Integer id) {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+            .body(new MessageResponse("La funcionalidad de likes ha sido removida", false));
     }
 }

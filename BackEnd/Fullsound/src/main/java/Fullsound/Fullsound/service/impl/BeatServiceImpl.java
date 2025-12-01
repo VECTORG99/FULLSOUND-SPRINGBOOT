@@ -78,7 +78,6 @@ public class BeatServiceImpl implements BeatService {
     @Transactional(readOnly = true)
     public List<BeatResponse> getAllActive() {
         return beatRepository.findAll().stream()
-                .filter(Beat::getActivo)
                 .map(beatMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -87,7 +86,6 @@ public class BeatServiceImpl implements BeatService {
     @Transactional(readOnly = true)
     public List<BeatResponse> getFeatured() {
         return beatRepository.findAll().stream()
-                .filter(Beat::getActivo)
                 .map(beatMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -104,7 +102,7 @@ public class BeatServiceImpl implements BeatService {
     @Transactional(readOnly = true)
     public List<BeatResponse> filterByPrice(Integer min, Integer max) {
         return beatRepository.findAll().stream()
-                .filter(beat -> beat.getActivo() && beat.getPrecio() >= min && beat.getPrecio() <= max)
+                .filter(beat -> beat.getPrecio() >= min && beat.getPrecio() <= max)
                 .map(beatMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -113,7 +111,7 @@ public class BeatServiceImpl implements BeatService {
     @Transactional(readOnly = true)
     public List<BeatResponse> filterByBpm(Integer min, Integer max) {
         return beatRepository.findAll().stream()
-                .filter(beat -> beat.getActivo() && beat.getBpm() != null && beat.getBpm() >= min && beat.getBpm() <= max)
+                .filter(beat -> beat.getBpm() != null && beat.getBpm() >= min && beat.getBpm() <= max)
                 .map(beatMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -123,8 +121,7 @@ public class BeatServiceImpl implements BeatService {
     public void delete(Integer id) {
         Beat beat = beatRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Beat", "id", id));
-        beat.setActivo(false);
-        beatRepository.save(beat);
+        beatRepository.delete(beat);
     }
     
     @Override
@@ -139,10 +136,8 @@ public class BeatServiceImpl implements BeatService {
     @Override
     @Transactional
     public void incrementLikes(Integer id) {
-        Beat beat = beatRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Beat", "id", id));
-        beat.setLikes(beat.getLikes() + 1);
-        beatRepository.save(beat);
+        // Funcionalidad de likes removida - columna eliminada del schema PostgreSQL
+        throw new UnsupportedOperationException("La funcionalidad de likes ha sido removida del schema de base de datos");
     }
     
     /**

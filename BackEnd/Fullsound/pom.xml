@@ -312,9 +312,26 @@
 						<groupId>com.github.eirslett</groupId>
 						<artifactId>frontend-maven-plugin</artifactId>
 						<executions>
-							<!-- Solo npm install, no build -->
+							<!-- Deshabilitar todo el frontend en dev -->
+							<execution>
+								<id>install-node-and-npm</id>
+								<phase>none</phase>
+							</execution>
+							<execution>
+								<id>npm-install</id>
+								<phase>none</phase>
+							</execution>
 							<execution>
 								<id>npm-build</id>
+								<phase>none</phase>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<artifactId>maven-resources-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>copy-react-build</id>
 								<phase>none</phase>
 							</execution>
 						</executions>

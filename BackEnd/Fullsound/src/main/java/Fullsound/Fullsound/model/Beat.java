@@ -73,14 +73,6 @@ public class Beat {
     @Builder.Default
     private Integer reproducciones = 0;
     
-    @Column(name = "likes", nullable = false)
-    @Builder.Default
-    private Integer likes = 0;
-    
-    @Column(name = "activo", nullable = false)
-    @Builder.Default
-    private Boolean activo = true;
-    
     @Column(name = "estado", length = 20, nullable = false)
     @Builder.Default
     private String estado = "DISPONIBLE"; // DISPONIBLE, VENDIDO, RESERVADO, INACTIVO

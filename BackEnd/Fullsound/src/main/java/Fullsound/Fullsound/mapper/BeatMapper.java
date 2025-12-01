@@ -12,7 +12,7 @@ import org.mapstruct.*;
  * @version 1.0.0
  * @since 2025-11-13
  */
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface BeatMapper {
     
     /**
@@ -34,13 +34,12 @@ public interface BeatMapper {
     
     /**
      * Actualiza una entidad Beat existente con datos de BeatRequest.
-     * Nota: Los campos 'likes' y 'activo' fueron removidos del schema PostgreSQL.
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "slug", ignore = true)
     @Mapping(target = "reproducciones", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntity(BeatRequest request, @MappingTarget Beat beat);
 }
