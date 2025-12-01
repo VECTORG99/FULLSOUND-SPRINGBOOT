@@ -96,4 +96,20 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setActivo(true);
         usuarioRepository.save(usuario);
     }
+    
+    @Override
+    @Transactional
+    public void cambiarPassword(String nombreUsuario, String passwordActual, String passwordNueva) {
+        Usuario usuario = usuarioRepository.findByNombreUsuario(nombreUsuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", "nombreUsuario", nombreUsuario));
+        
+        // Verificar que la contraseña actual sea correcta
+        if (!passwordEncoder.matches(passwordActual, usuario.getContraseña())) {
+            throw new BadRequestException("La contraseña actual es incorrecta");
+        }
+        
+        // Actualizar con la nueva contraseña
+        usuario.setContraseña(passwordEncoder.encode(passwordNueva));
+        usuarioRepository.save(usuario);
+    }
 }

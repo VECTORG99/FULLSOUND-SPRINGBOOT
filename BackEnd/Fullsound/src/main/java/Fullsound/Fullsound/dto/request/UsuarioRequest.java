@@ -9,17 +9,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO para petición de registro de usuario.
- * 
- * @author VECTORG99
- * @version 1.0.0
- * @since 2025-11-13
+ * DTO de solicitud para actualizar datos de Usuario.
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RegisterRequest {
+public class UsuarioRequest {
     
     @NotBlank(message = "El nombre de usuario es obligatorio")
     @Size(min = 3, max = 50, message = "El nombre de usuario debe tener entre 3 y 50 caracteres")
@@ -27,17 +23,6 @@ public class RegisterRequest {
     
     @NotBlank(message = "El correo es obligatorio")
     @Email(message = "El correo debe ser válido")
+    @Size(max = 100, message = "El correo no puede exceder 100 caracteres")
     private String correo;
-    
-    @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
-    private String contraseña;
-    
-    // Campo opcional para especificar el rol (cliente, administrador, productor)
-    // Si no se especifica, por defecto será "cliente"
-    private String rol;
-    
-    private String nombre;
-    
-    private String apellido;
 }

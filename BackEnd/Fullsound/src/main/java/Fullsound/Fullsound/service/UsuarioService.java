@@ -55,4 +55,13 @@ public interface UsuarioService {
      * @param id ID del usuario
      */
     void activate(Integer id);
+    
+    /**
+     * Cambia la contraseña de un usuario.
+     *
+     * @param nombreUsuario nombre del usuario
+     * @param passwordActual contraseña actual
+     * @param passwordNueva nueva contraseña
+     */
+    void cambiarPassword(String nombreUsuario, String passwordActual, String passwordNueva);
 }

@@ -1,13 +1,11 @@
 package Fullsound.Fullsound.mapper;
 
 import Fullsound.Fullsound.dto.response.UsuarioResponse;
-import Fullsound.Fullsound.model.Rol;
 import Fullsound.Fullsound.model.Usuario;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Mapper para entidad Usuario.
@@ -29,11 +27,9 @@ public interface UsuarioMapper {
      * Método helper para mapear roles.
      */
     default List<String> mapRoles(Usuario usuario) {
-        if (usuario == null || usuario.getRoles() == null) {
+        if (usuario == null || usuario.getRol() == null) {
             return List.of();
         }
-        return usuario.getRoles().stream()
-                .map(Rol::getTipo)
-                .collect(Collectors.toList());
+        return List.of(usuario.getRol().getTipo());
     }
 }

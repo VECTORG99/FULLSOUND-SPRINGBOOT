@@ -5,14 +5,12 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Entidad Usuario - Mapea a la tabla 'usuario' en la base de datos.
  * Representa un usuario del sistema (cliente o administrador).
  * 
- * IMPORTANTE: Relación Many-to-Many con Rol via tabla 'usuario_roles'
+ * IMPORTANTE: Relación Many-to-One con Rol via columna 'id_rol'
  * 
  * @author VECTORG99
  * @version 1.0.0
@@ -51,14 +49,16 @@ public class Usuario {
     @Column(name = "updated_at", nullable = false, updatable = true)
     private LocalDateTime updatedAt;
     
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "usuario_roles",
-        joinColumns = @JoinColumn(name = "id_usuario"),
-        inverseJoinColumns = @JoinColumn(name = "id_tipo_usuario")
-    )
-    @Builder.Default
-    private Set<Rol> roles = new HashSet<>();
+    // Relación Many-to-One con Rol
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_rol", nullable = false)
+    private Rol rol;
+    
+    @Column(name = "nombre", length = 100)
+    private String nombre;
+    
+    @Column(name = "apellido", length = 100)
+    private String apellido;
     
     @Override
     public String toString() {

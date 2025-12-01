@@ -61,9 +61,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
     /**
      * Busca usuarios por rol.
      * 
-     * @param rolTipo el tipo de rol ("cliente" o "administrador")
+     * @param rolTipo el tipo de rol ("cliente", "administrador" o "productor")
      * @return lista de usuarios con ese rol
      */
-    @Query("SELECT u FROM Usuario u JOIN u.roles r WHERE r.tipo = :rolTipo")
+    @Query("SELECT u FROM Usuario u WHERE u.rol.tipo = :rolTipo")
     List<Usuario> findByRolTipo(String rolTipo);
 }

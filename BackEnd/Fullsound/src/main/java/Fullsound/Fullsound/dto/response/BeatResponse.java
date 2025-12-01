@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class BeatResponse {
-    private Integer id;
+    private Integer idBeat;
     private String titulo;
     private String slug;
     private String artista;

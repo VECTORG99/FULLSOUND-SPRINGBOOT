@@ -21,10 +21,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Implementación del servicio de autenticación.
@@ -55,20 +53,24 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException("El correo ya está registrado");
         }
         
+        // Determinar el rol a asignar (si se especifica, sino cliente por defecto)
+        String tipoRol = (request.getRol() != null && !request.getRol().isEmpty()) 
+                ? request.getRol() 
+                : "cliente";
+        
+        Rol rol = rolRepository.findByTipo(tipoRol)
+                .orElseThrow(() -> new BadRequestException("Rol '" + tipoRol + "' no encontrado"));
+        
         // Crear nuevo usuario
         Usuario usuario = Usuario.builder()
                 .nombreUsuario(request.getNombreUsuario())
                 .correo(request.getCorreo())
+                .nombre(request.getNombre())
+                .apellido(request.getApellido())
                 .contraseña(passwordEncoder.encode(request.getContraseña()))
                 .activo(true)
+                .rol(rol)
                 .build();
-        
-        // Asignar rol de cliente por defecto
-        Set<Rol> roles = new HashSet<>();
-        Rol rolCliente = rolRepository.findByTipo("cliente")
-                .orElseThrow(() -> new BadRequestException("Rol de cliente no encontrado"));
-        roles.add(rolCliente);
-        usuario.setRoles(roles);
         
         usuarioRepository.save(usuario);
         
@@ -80,10 +82,21 @@ public class AuthServiceImpl implements AuthService {
     
     @Override
     public AuthResponse login(LoginRequest request) {
-        // Autenticar usuario
+        // Determinar si es correo o nombre de usuario
+        String identifier = request.getNombreUsuario();
+        String username = identifier;
+        
+        // Si parece un correo, buscar el usuario por correo para obtener el nombreUsuario
+        if (identifier.contains("@")) {
+            Usuario usuario = usuarioRepository.findByCorreo(identifier)
+                    .orElseThrow(() -> new BadRequestException("Credenciales inválidas"));
+            username = usuario.getNombreUsuario();
+        }
+        
+        // Autenticar usuario con el nombre de usuario real
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getNombreUsuario(),
+                        username,
                         request.getContraseña()
                 )
         );
@@ -95,9 +108,14 @@ public class AuthServiceImpl implements AuthService {
         
         // Obtener detalles del usuario
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(item -> item.getAuthority())
-                .collect(Collectors.toList());
+        
+        // Obtener el rol del usuario desde la base de datos
+        Usuario usuario = usuarioRepository.findByNombreUsuario(userDetails.getUsername())
+                .orElseThrow(() -> new BadRequestException("Usuario no encontrado"));
+        
+        List<String> roles = usuario.getRol() != null 
+                ? Collections.singletonList(usuario.getRol().getTipo())
+                : Collections.emptyList();
         
         return new AuthResponse(
                 jwt,

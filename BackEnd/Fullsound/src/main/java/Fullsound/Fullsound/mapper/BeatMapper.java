@@ -18,6 +18,7 @@ public interface BeatMapper {
     /**
      * Convierte una entidad Beat a BeatResponse DTO.
      */
+    @Mapping(source = "id", target = "idBeat")
     @Mapping(target = "precioFormateado", expression = "java(beat.getPrecioFormateado())")
     @Mapping(target = "enlaceProducto", expression = "java(beat.getEnlaceProducto())")
     BeatResponse toResponse(Beat beat);
@@ -40,6 +41,6 @@ public interface BeatMapper {
     @Mapping(target = "reproducciones", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, unmappedTargetPolicy = ReportingPolicy.IGNORE)
     void updateEntity(BeatRequest request, @MappingTarget Beat beat);
 }

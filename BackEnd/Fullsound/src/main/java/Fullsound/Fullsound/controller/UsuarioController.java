@@ -1,5 +1,6 @@
 package Fullsound.Fullsound.controller;
 
+import Fullsound.Fullsound.dto.request.UpdatePasswordRequest;
 import Fullsound.Fullsound.dto.request.UpdateUsuarioRequest;
 import Fullsound.Fullsound.dto.response.MessageResponse;
 import Fullsound.Fullsound.dto.response.UsuarioResponse;
@@ -104,5 +105,22 @@ public class UsuarioController {
     public ResponseEntity<MessageResponse> activate(@PathVariable Integer id) {
         usuarioService.activate(id);
         return ResponseEntity.ok(new MessageResponse("Usuario activado correctamente", true));
+    }
+    
+    /**
+     * Cambia la contraseña del usuario autenticado.
+     *
+     * @param request datos de cambio de contraseña
+     * @param authentication información del usuario autenticado
+     * @return mensaje de confirmación
+     */
+    @PostMapping("/cambiar-password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<MessageResponse> cambiarPassword(
+            @Valid @RequestBody UpdatePasswordRequest request,
+            Authentication authentication) {
+        String nombreUsuario = authentication.getName();
+        usuarioService.cambiarPassword(nombreUsuario, request.getPasswordActual(), request.getPasswordNueva());
+        return ResponseEntity.ok(new MessageResponse("Contraseña actualizada exitosamente", true));
     }
 }

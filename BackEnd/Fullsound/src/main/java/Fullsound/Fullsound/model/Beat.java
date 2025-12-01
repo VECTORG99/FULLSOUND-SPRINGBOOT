@@ -91,7 +91,7 @@ public class Beat {
      */
     @Transient
     public String getPrecioFormateado() {
-        return precio != null ? String.format("$%,.2f", precio) : "$0.00";
+        return precio != null ? String.format("$%,d", precio) : "$0";
     }
     
     /**

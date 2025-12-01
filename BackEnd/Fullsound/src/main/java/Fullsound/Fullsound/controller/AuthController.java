@@ -53,6 +53,9 @@ public class AuthController {
     })
     @PostMapping("/register")
     public ResponseEntity<MessageResponse> register(@Valid @RequestBody RegisterRequest request) {
+        System.out.println("[AUTH] Registro recibido - Usuario: " + request.getNombreUsuario() + 
+                         ", Correo: " + request.getCorreo() + 
+                         ", Rol: " + request.getRol());
         MessageResponse response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

@@ -1,6 +1,5 @@
 package Fullsound.Fullsound.security;
 
-import Fullsound.Fullsound.model.Rol;
 import Fullsound.Fullsound.model.Usuario;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,7 +9,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Implementación de UserDetails para Spring Security.
@@ -34,9 +32,10 @@ public class UserDetailsImpl implements UserDetails {
      * Construye un UserDetailsImpl desde una entidad Usuario.
      */
     public static UserDetailsImpl build(Usuario usuario) {
-        List<GrantedAuthority> authorities = usuario.getRoles().stream()
-                .map(rol -> new SimpleGrantedAuthority(rol.getTipo()))
-                .collect(Collectors.toList());
+        List<GrantedAuthority> authorities = new java.util.ArrayList<>();
+        if (usuario.getRol() != null) {
+            authorities.add(new SimpleGrantedAuthority(usuario.getRol().getTipo()));
+        }
         
         return new UserDetailsImpl(
                 usuario.getId(),
