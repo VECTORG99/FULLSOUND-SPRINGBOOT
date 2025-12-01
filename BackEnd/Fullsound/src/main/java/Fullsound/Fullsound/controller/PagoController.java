@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 /**
  * Controlador REST para la gestión de pagos con Stripe.
  */
-@RestController
+//@RestController
 @RequestMapping("/api/pagos")
 @RequiredArgsConstructor
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000", "http://localhost:4200", "http://localhost:8080"})

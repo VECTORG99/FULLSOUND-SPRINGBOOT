@@ -26,7 +26,7 @@ import java.util.Map;
 /**
  * Implementación del servicio de pagos con integración Stripe.
  */
-@Service
+//@Service
 @RequiredArgsConstructor
 public class PagoServiceImpl implements PagoService {
 
