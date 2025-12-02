@@ -1,24 +1,10 @@
 package Fullsound.Fullsound.model;
-
-
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
-/**
- * Entidad Pedido - Mapea a la tabla 'compra' en la base de datos.
- * Representa una compra realizada por un usuario.
- * 
- * IMPORTANTE: La tabla en BD se llama 'compra', no 'pedidos'
- * 
- * @author VECTORG99
- * @version 1.0.0
- * @since 2025-11-13
- */
 @Entity
 @Table(name = "compra")
 @Data
@@ -26,41 +12,28 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class Pedido {
-    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_compra")
     private Integer id;
-    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_usuario", nullable = false)
     private Usuario usuario;
-    
     @Column(name = "numero_pedido", unique = true, length = 50)
     private String numeroPedido;
-    
     @CreationTimestamp
     @Column(name = "fecha_compra", nullable = false, updatable = false)
     private LocalDateTime fechaCompra;
-    
     @Column(name = "total", nullable = false)
     private Integer total;
-    
     @Column(name = "estado", length = 20, nullable = false)
     @Builder.Default
-    private String estado = "PENDIENTE"; // PENDIENTE, PROCESANDO, COMPLETADO, CANCELADO, REEMBOLSADO
-    
+    private String estado = "PENDIENTE";  
     @Column(name = "metodo_pago", length = 20)
-    private String metodoPago; // STRIPE, PAYPAL, TRANSFERENCIA
-    
+    private String metodoPago;  
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<PedidoItem> items = new ArrayList<>();
-    
-    /**
-     * Método para generar el número de pedido automáticamente.
-     * Formato: FS-YYYYMMDD-XXXXXX (FS = FullSound)
-     */
     @PrePersist
     public void generarNumeroPedido() {
         if (this.numeroPedido == null) {
@@ -71,23 +44,14 @@ public class Pedido {
                 "-" + numeroUnico;
         }
     }
-    
-    /**
-     * Método helper para agregar items al pedido.
-     */
     public void addItem(PedidoItem item) {
         items.add(item);
         item.setPedido(this);
     }
-    
-    /**
-     * Método helper para remover items del pedido.
-     */
     public void removeItem(PedidoItem item) {
         items.remove(item);
         item.setPedido(null);
     }
-    
     @Override
     public String toString() {
         return "Pedido{id=" + id + ", numeroPedido='" + numeroPedido + "', total=" + total + ", estado=" + estado + "}";

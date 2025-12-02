@@ -1,133 +1,50 @@
-# 🎵 FULLSOUND - Plataforma de Beats (Spring Boot Backend)
+# FullSound Backend - Spring Boot
 
-## 📋 Descripción
+Backend REST API para marketplace de beats musicales.
 
-Backend REST API para la plataforma FULLSOUND, un marketplace de beats musicales desarrollado con Spring Boot y adaptado a una base de datos MySQL existente.
+## Stack Tecnológico
 
----
+- Java 17
+- Spring Boot 3.2.0
+- PostgreSQL (migrado desde MySQL)
+- Spring Security + JWT
+- Swagger/OpenAPI
+- MapStruct
+- Maven
 
-## 🏗️ Arquitectura
-
-- **Framework:** Spring Boot 3.2.0
-- **Java:** 17
-- **Base de Datos:** MySQL 8.0+ (`Fullsound_Base`)
-- **Autenticación:** JWT (JSON Web Tokens)
-- **Pagos:** Stripe API
-- **Documentación API:** SpringDoc OpenAPI (Swagger)
-- **Build Tool:** Maven
-
----
-
-## 🗄️ Estructura de Base de Datos
-
-### Tablas Principales:
-
-| Tabla | Descripción | Registros Actuales |
-|-------|-------------|-------------------|
-| `tipo_usuario` | Roles (cliente, administrador) | 2 |
-| `usuario` | Usuarios del sistema | 12 |
-| `beat` | Beats musicales | 9 |
-| `compra` | Pedidos/Compras | 5 |
-| `compra_detalle` | Líneas de pedido | 5 |
-| `pago` | Pagos (Stripe) | 5 |
-| `usuario_roles` | Relación usuario-rol | 12 |
-
----
-
-## 🚀 Inicio Rápido
-
-### 1. Requisitos Previos
+## Requisitos
 
 ```bash
-# Java 17
-java -version
-
-# Maven 3.8+
-mvn -version
-
-# MySQL 8.0+
-mysql --version
+java -version    # Java 17+
+mvn -version     # Maven 3.8+
+psql --version   # PostgreSQL 12+
 ```
 
-### 2. Configurar Base de Datos
+## Configuración
 
-#### Opción A: Usar BD Existente (Recomendado)
-```bash
-# Ejecutar script de mejoras
-cd plan
-mysql -u root -p < DATABASE_MIGRATION.sql
-```
-
-#### Opción B: Crear BD desde Cero
-```bash
-mysql -u root -p
-CREATE DATABASE Fullsound_Base;
-USE Fullsound_Base;
-source plan/DATABASE_MIGRATION.sql;
-```
-
-### 3. Configurar Application Properties
-
-Editar `Fullsound/src/main/resources/application.properties`:
+### application.properties
 
 ```properties
 # Database
-spring.datasource.url=jdbc:mysql://localhost:3306/Fullsound_Base
-spring.datasource.username=root
-spring.datasource.password=TU_PASSWORD_AQUI
+spring.datasource.url=jdbc:postgresql://localhost:5432/fullsound
+spring.datasource.username=postgres
+spring.datasource.password=tu_password
 
-# JWT Secret (cambiar en producción)
-jwt.secret=MySecretKeyForJWTTokenGenerationShouldBeLongEnoughForHS512Algorithm
-
-# Stripe (obtener en https://dashboard.stripe.com/test/apikeys)
-stripe.api.key=sk_test_YOUR_STRIPE_KEY_HERE
+# JWT
+jwt.secret=tu_secret_key_256_bits
+jwt.expiration=86400000
 ```
 
-### 4. Compilar y Ejecutar
+### Ejecutar
 
 ```bash
-cd Fullsound
-mvn clean install
-mvn spring-boot:run
+cd BackEnd/Fullsound
+./mvnw spring-boot:run
 ```
 
-### 5. Verificar
+Swagger UI: http://localhost:8080/swagger-ui.html
 
-```bash
-# Health check
-curl http://localhost:8080/actuator/health
-
-# Swagger UI
-open http://localhost:8080/swagger-ui.html
-```
-
----
-
-## 📁 Estructura del Proyecto
-
-```
-Fullsound/
-├── src/main/java/Fullsound/Fullsound/
-│   ├── config/          # Configuración (JPA, Security, CORS)
-│   ├── controller/      # REST Controllers (6)
-│   ├── service/         # Lógica de negocio (6)
-│   ├── repository/      # Acceso a datos (6)
-│   ├── model/
-│   │   ├── entity/      # Entidades JPA (6)
-│   │   ├── enums/       # Enumeraciones (5)
-│   │   └── dto/         # DTOs Request/Response
-│   ├── mapper/          # MapStruct Mappers (3)
-│   ├── security/        # JWT + Spring Security
-│   └── exception/       # Manejo de excepciones
-├── src/main/resources/
-│   ├── application.properties
-│   └── static/          # Archivos estáticos
-└── pom.xml
-```
-
----
-
-## 🔐 Autenticación
+## Autenticación
 
 ### Registrar Usuario
 
@@ -135,10 +52,10 @@ Fullsound/
 curl -X POST http://localhost:8080/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "username": "nuevo_usuario",
-    "email": "usuario@example.com",
+    "username": "usuario1",
+    "email": "usuario1@test.com",
     "password": "password123",
-    "nombreCompleto": "Usuario Nuevo"
+    "nombreCompleto": "Usuario Uno"
   }'
 ```
 
@@ -148,25 +65,20 @@ curl -X POST http://localhost:8080/api/auth/register \
 curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "username": "juan123",
-    "password": "hash1"
+    "username": "usuario1",
+    "password": "password123"
   }'
 ```
 
-**Respuesta:**
+Respuesta incluye token JWT:
 ```json
 {
-  "success": true,
-  "message": "Login exitoso",
-  "data": {
-    "token": "eyJhbGciOiJIUzUxMiJ9...",
-    "type": "Bearer",
-    "usuario": {
-      "id": 1,
-      "username": "juan123",
-      "email": "juan@example.com",
-      "roles": ["cliente"]
-    }
+  "token": "eyJhbGciOiJIUzUxMiJ9...",
+  "type": "Bearer",
+  "usuario": {
+    "id": 1,
+    "username": "usuario1",
+    "roles": ["cliente"]
   }
 }
 ```
@@ -175,193 +87,180 @@ curl -X POST http://localhost:8080/api/auth/login \
 
 ```bash
 curl http://localhost:8080/api/beats \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+  -H "Authorization: Bearer {token}"
 ```
 
----
+## Endpoints Principales
 
-## 📌 Endpoints Principales
+### Auth - `/api/auth`
+- POST `/register` - Registrar usuario
+- POST `/login` - Iniciar sesión
+- POST `/forgot-password` - Recuperar contraseña
+- GET `/check-username/{username}` - Verificar disponibilidad
+- GET `/check-email/{email}` - Verificar disponibilidad
 
-### Auth (`/api/auth`)
-| Método | Endpoint | Descripción | Público |
-|--------|----------|-------------|---------|
-| POST | `/register` | Registrar usuario | ✅ |
-| POST | `/login` | Iniciar sesión | ✅ |
-| POST | `/forgot-password` | Recuperar contraseña | ✅ |
-| POST | `/reset-password` | Resetear contraseña | ✅ |
-| GET | `/check-username/{username}` | Verificar disponibilidad | ✅ |
-| GET | `/check-email/{email}` | Verificar disponibilidad | ✅ |
+### Beats - `/api/beats`
+- GET `/` - Listar beats (paginado)
+- GET `/{id}` - Obtener beat
+- GET `/slug/{slug}` - Obtener por slug
+- GET `/genero/{genero}` - Filtrar por género
+- GET `/destacados` - Beats destacados
+- POST `/` - Crear beat (Auth)
+- PUT `/{id}` - Actualizar beat (Propietario)
+- DELETE `/{id}` - Eliminar beat (Propietario)
+- POST `/{id}/like` - Dar like (Auth)
+- POST `/{id}/reproducir` - Incrementar reproducciones
 
-### Beats (`/api/beats`)
-| Método | Endpoint | Descripción | Auth |
-|--------|----------|-------------|------|
-| GET | `/` | Listar beats (paginado) | ✅ |
-| GET | `/{id}` | Obtener beat por ID | ✅ |
-| GET | `/slug/{slug}` | Obtener beat por slug | ✅ |
-| GET | `/genero/{genero}` | Filtrar por género | ✅ |
-| GET | `/destacados` | Beats destacados | ✅ |
-| POST | `/` | Crear beat | 🔒 Auth |
-| PUT | `/{id}` | Actualizar beat | 🔒 Propietario |
-| DELETE | `/{id}` | Eliminar beat | 🔒 Propietario |
-| POST | `/{id}/like` | Dar like | 🔒 Auth |
-| POST | `/{id}/reproducir` | Incrementar reproducciones | ✅ |
-| GET | `/mis-beats` | Beats del usuario | 🔒 Auth |
+### Pedidos - `/api/pedidos` (Auth requerido)
+- GET `/mis-pedidos` - Pedidos del usuario
+- GET `/{id}` - Detalle de pedido
+- GET `/numero/{numero}` - Buscar por número
+- GET `/` - Listar todos (Admin)
 
-### Usuarios (`/api/usuarios`)
-| Método | Endpoint | Descripción | Auth |
-|--------|----------|-------------|------|
-| GET | `/perfil` | Perfil actual | 🔒 Auth |
-| PUT | `/perfil` | Actualizar perfil | 🔒 Auth |
-| POST | `/cambiar-password` | Cambiar contraseña | 🔒 Auth |
-| GET | `/{id}` | Obtener usuario | 🔒 Admin |
-| GET | `/` | Listar usuarios | 🔒 Admin |
+### Pagos - `/api/pagos` (Auth requerido)
+- POST `/create-payment-intent` - Crear intento de pago
+- POST `/confirm` - Confirmar pago
+- POST `/webhook` - Webhook de Stripe
+- GET `/{id}` - Detalle de pago
 
-### Pedidos (`/api/pedidos`)
-| Método | Endpoint | Descripción | Auth |
-|--------|----------|-------------|------|
-| GET | `/mis-pedidos` | Pedidos del usuario | 🔒 Auth |
-| GET | `/{id}` | Detalle de pedido | 🔒 Auth |
-| GET | `/numero/{numero}` | Buscar por número | 🔒 Auth |
-| GET | `/` | Listar todos | 🔒 Admin |
+### Usuarios - `/api/usuarios`
+- GET `/perfil` - Perfil actual (Auth)
+- PUT `/perfil` - Actualizar perfil (Auth)
+- POST `/cambiar-password` - Cambiar contraseña (Auth)
+- GET `/{id}` - Obtener usuario (Admin)
+- GET `/` - Listar usuarios (Admin)
 
-### Pagos (`/api/pagos`)
-| Método | Endpoint | Descripción | Auth |
-|--------|----------|-------------|------|
-| POST | `/create-payment-intent` | Crear intento de pago | 🔒 Auth |
-| POST | `/confirm` | Confirmar pago | 🔒 Auth |
-| POST | `/webhook` | Webhook de Stripe | ✅ |
-| GET | `/{id}` | Detalle de pago | 🔒 Auth |
+### Estadísticas - `/api/estadisticas` (Admin)
+- GET `/dashboard` - Dashboard general
+- GET `/beats/top` - Beats más vendidos
+- GET `/ventas` - Reporte de ventas
 
-### Estadísticas (`/api/estadisticas`)
-| Método | Endpoint | Descripción | Auth |
-|--------|----------|-------------|------|
-| GET | `/dashboard` | Dashboard general | 🔒 Admin |
-| GET | `/beats/top` | Beats más vendidos | 🔒 Admin |
-| GET | `/ventas` | Reporte de ventas | 🔒 Admin |
+## Estructura del Proyecto
 
----
+```
+src/main/java/Fullsound/Fullsound/
+├── config/          # Configuración (Security, CORS, Swagger)
+├── controller/      # REST Controllers (6)
+├── dto/             # DTOs Request/Response
+├── exception/       # Manejo de excepciones
+├── mapper/          # MapStruct mappers
+├── model/           # Entidades JPA (6)
+├── repository/      # Repositorios Spring Data (6)
+├── security/        # JWT + Spring Security
+└── service/         # Lógica de negocio (6)
+```
 
-## 🧪 Testing
+## Schema PostgreSQL
 
-### Ejecutar Tests
+```sql
+-- Roles
+CREATE TABLE tipo_usuario (
+    id_tipo_usuario INTEGER PRIMARY KEY,
+    tipo VARCHAR(50) NOT NULL UNIQUE,
+    descripcion VARCHAR(255)
+);
+
+-- Usuarios
+CREATE TABLE usuario (
+    id_usuario SERIAL PRIMARY KEY,
+    nombre_usuario VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    nombre_completo VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Relación usuario-roles
+CREATE TABLE usuario_roles (
+    id_usuario INTEGER REFERENCES usuario(id_usuario),
+    id_tipo_usuario INTEGER REFERENCES tipo_usuario(id_tipo_usuario),
+    PRIMARY KEY (id_usuario, id_tipo_usuario)
+);
+
+-- Beats
+CREATE TABLE beat (
+    id_beat SERIAL PRIMARY KEY,
+    titulo VARCHAR(255) NOT NULL,
+    artista VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    precio INTEGER NOT NULL,
+    bpm INTEGER NOT NULL,
+    tonalidad VARCHAR(10) NOT NULL,
+    duracion INTEGER NOT NULL,
+    genero VARCHAR(100),
+    etiquetas VARCHAR(500),
+    descripcion TEXT,
+    estado VARCHAR(20) DEFAULT 'DISPONIBLE',
+    reproducciones INTEGER DEFAULT 0,
+    imagen_url VARCHAR(500),
+    audio_url VARCHAR(500),
+    audio_demo_url VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Pedidos
+CREATE TABLE compra (
+    id_compra SERIAL PRIMARY KEY,
+    numero_pedido VARCHAR(50) UNIQUE NOT NULL,
+    id_usuario INTEGER REFERENCES usuario(id_usuario),
+    fecha_compra TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total INTEGER NOT NULL,
+    estado VARCHAR(20) DEFAULT 'PENDIENTE',
+    metodo_pago VARCHAR(20)
+);
+
+-- Items de pedido
+CREATE TABLE compra_detalle (
+    id_detalle SERIAL PRIMARY KEY,
+    id_compra INTEGER REFERENCES compra(id_compra),
+    id_beat INTEGER REFERENCES beat(id_beat),
+    nombre_item VARCHAR(255),
+    cantidad INTEGER DEFAULT 1,
+    precio_unitario INTEGER NOT NULL
+);
+
+-- Pagos
+CREATE TABLE pago (
+    id_pago SERIAL PRIMARY KEY,
+    id_compra INTEGER REFERENCES compra(id_compra),
+    stripe_payment_intent_id VARCHAR(255) UNIQUE,
+    stripe_charge_id VARCHAR(255) UNIQUE,
+    monto INTEGER NOT NULL,
+    moneda VARCHAR(3) DEFAULT 'USD',
+    estado VARCHAR(20) DEFAULT 'PENDIENTE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    processed_at TIMESTAMP
+);
+```
+
+## Migración desde MySQL
+
+El proyecto fue migrado desde MySQL a PostgreSQL. Cambios principales:
+
+- Enums eliminados, reemplazados por VARCHAR con validaciones @Pattern
+- Campos eliminados de Beat: mood, tags, archivoAudio, imagenPortada, descargas, likes, destacado, activo
+- Campos agregados a Beat: duracion, genero, etiquetas, descripcion, imagenUrl, audioUrl, audioDemoUrl
+- IDs tipo INTEGER con SERIAL para auto-incremento
+- Join table usuario_roles con columnas id_usuario, id_tipo_usuario
+
+Ver detalles en MIGRACION_POSTGRESQL_COMPLETADA.md
+
+## Testing
 
 ```bash
-# Todos los tests
-mvn test
+# Ejecutar tests
+./mvnw test
 
 # Tests específicos
-mvn test -Dtest=BeatServiceTest
-mvn test -Dtest=AuthControllerTest
+./mvnw test -Dtest=BeatServiceTest
 
 # Con cobertura
-mvn clean test jacoco:report
+./mvnw clean test jacoco:report
 ```
 
-### Tipos de Tests
-
-1. **Unit Tests:** Servicios con Mockito
-2. **Integration Tests:** @SpringBootTest con BD H2
-3. **Controller Tests:** @WebMvcTest con MockMvc
-4. **Repository Tests:** @DataJpaTest
-
----
-
-## 📦 Dependencias Principales
-
-```xml
-<!-- Spring Boot -->
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-web</artifactId>
-</dependency>
-
-<!-- Spring Data JPA -->
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-data-jpa</artifactId>
-</dependency>
-
-<!-- Spring Security + JWT -->
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-security</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.jsonwebtoken</groupId>
-    <artifactId>jjwt-api</artifactId>
-    <version>0.12.3</version>
-</dependency>
-
-<!-- MySQL -->
-<dependency>
-    <groupId>com.mysql</groupId>
-    <artifactId>mysql-connector-j</artifactId>
-</dependency>
-
-<!-- Stripe -->
-<dependency>
-    <groupId>com.stripe</groupId>
-    <artifactId>stripe-java</artifactId>
-    <version>24.3.0</version>
-</dependency>
-
-<!-- MapStruct -->
-<dependency>
-    <groupId>org.mapstruct</groupId>
-    <artifactId>mapstruct</artifactId>
-    <version>1.5.5.Final</version>
-</dependency>
-
-<!-- Swagger/OpenAPI -->
-<dependency>
-    <groupId>org.springdoc</groupId>
-    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-    <version>2.3.0</version>
-</dependency>
-```
-
----
-
-## 🔧 Configuración de Producción
-
-### application-prod.properties
-
-```properties
-# Database
-spring.datasource.url=${DATABASE_URL}
-spring.datasource.username=${DB_USERNAME}
-spring.datasource.password=${DB_PASSWORD}
-
-# JPA
-spring.jpa.hibernate.ddl-auto=validate
-spring.jpa.show-sql=false
-
-# JWT
-jwt.secret=${JWT_SECRET}
-
-# Stripe
-stripe.api.key=${STRIPE_LIVE_KEY}
-
-# Logging
-logging.level.root=WARN
-logging.level.Fullsound.Fullsound=INFO
-```
-
-### Variables de Entorno
-
-```bash
-export DATABASE_URL=jdbc:mysql://production-host:3306/Fullsound_Base
-export DB_USERNAME=fullsound_user
-export DB_PASSWORD=secure_password
-export JWT_SECRET=production_secret_256_bits
-export STRIPE_LIVE_KEY=sk_live_your_live_key
-```
-
----
-
-## 🐳 Docker
-
-### Dockerfile
+## Docker
 
 ```dockerfile
 FROM eclipse-temurin:17-jre-alpine
@@ -371,103 +270,19 @@ EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
 
-### Docker Compose
-
-```yaml
-version: '3.8'
-services:
-  backend:
-    build: ./Fullsound
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/Fullsound_Base
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=rootpassword
-    depends_on:
-      - mysql
-  
-  mysql:
-    image: mysql:8.0
-    environment:
-      - MYSQL_ROOT_PASSWORD=rootpassword
-      - MYSQL_DATABASE=Fullsound_Base
-    ports:
-      - "3306:3306"
+```bash
+docker build -t fullsound-backend .
+docker run -p 8080:8080 --env-file .env fullsound-backend
 ```
 
----
+## Notas Importantes
 
-## 📚 Documentación Adicional
+1. Roles en BD son strings: "cliente" y "administrador" (no ROLE_*)
+2. IDs usan Integer (INT en BD), no Long
+3. Estados son VARCHAR: DISPONIBLE, VENDIDO, RESERVADO, INACTIVO para beats
+4. Estados pedido: PENDIENTE, PROCESANDO, COMPLETADO, CANCELADO, REEMBOLSADO
+5. Estados pago: PENDIENTE, PROCESANDO, COMPLETADO, FALLIDO, REEMBOLSADO
 
-- **Plan de Implementación:** Ver `plan/00_IMPLEMENTACION_FINAL.md`
-- **Mapeo de BD:** Ver `plan/15_MAPEO_BASE_DATOS.md`
-- **Script de Migración:** Ver `plan/DATABASE_MIGRATION.sql`
-- **Entidades JPA:** Ver `plan/03_ENTIDADES_JPA.md`
-- **Enumeraciones:** Ver `plan/02_ENUMERACIONES.md`
+## Licencia
 
----
-
-## 🤝 Contribución
-
-### Branching Strategy
-
-- `main` - Producción
-- `develop` - Desarrollo
-- `feature/*` - Nuevas características
-- `hotfix/*` - Correcciones urgentes
-
-### Commit Messages
-
-```
-feat: Agregar endpoint de estadísticas
-fix: Corregir validación de email
-docs: Actualizar README
-refactor: Mejorar servicio de pagos
-test: Agregar tests de BeatService
-```
-
----
-
-## 📝 Licencia
-
-Copyright © 2025 FULLSOUND. Todos los derechos reservados.
-
----
-
-## 📞 Contacto
-
-- **Desarrollador:** VECTORG99
-- **Email:** fullsound@example.com
-- **GitHub:** https://github.com/VECTORG99/FULLSOUND-SPRINGBOOT
-
----
-
-## ⚠️ Notas Importantes
-
-1. **Base de Datos:** El proyecto está adaptado a una BD MySQL existente (`Fullsound_Base`)
-2. **Roles:** Los roles en BD son strings: `"cliente"` y `"administrador"` (no `ROLE_*`)
-3. **IDs:** Las entidades usan `Integer` (INT en MySQL), no `Long`
-4. **Campos Calculados:** `precio_formateado` y `enlace_producto` se calculan en runtime con `@Transient`
-5. **Entidades No Implementadas:** Producto, Carrito, Review (no existen en BD actual)
-
----
-
-## 🎯 Roadmap
-
-- [ ] ✅ Adaptación a BD existente
-- [ ] ✅ Implementación de entidades JPA
-- [ ] ✅ Configuración de seguridad JWT
-- [ ] ✅ Integración con Stripe
-- [ ] 🔄 Tests unitarios e integración
-- [ ] 🔄 Documentación Swagger completa
-- [ ] 📋 Sistema de notificaciones
-- [ ] 📋 Carrito de compras (requiere nueva tabla)
-- [ ] 📋 Sistema de reviews (requiere nueva tabla)
-- [ ] 📋 Productos adicionales (requiere nueva tabla)
-- [ ] 📋 CI/CD con GitHub Actions
-- [ ] 📋 Deploy en AWS/Heroku
-
----
-
-**¡Gracias por usar FULLSOUND!** 🎵
+Copyright 2025 FULLSOUND. Todos los derechos reservados.

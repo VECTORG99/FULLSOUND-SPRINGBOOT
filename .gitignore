@@ -15,6 +15,7 @@ FrontEnd/package-lock.json
 
 # Backend (Spring Boot/Maven)
 BackEnd/Fullsound/target/
+Fullsound/target/
 BackEnd/Fullsound/.mvn/wrapper/maven-wrapper.jar
 BackEnd/Fullsound/mvnw
 BackEnd/Fullsound/mvnw.cmd

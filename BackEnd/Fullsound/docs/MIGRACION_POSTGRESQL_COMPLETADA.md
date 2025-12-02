@@ -1,174 +1,88 @@
-# Migración a PostgreSQL - Completada ✅
+# Migración a PostgreSQL - Completada
 
-**Fecha:** 30 de Noviembre, 2025  
-**Estado:** COMPLETO - Compilación exitosa
+Fecha: 30 de Noviembre, 2025
+Estado: COMPLETO - Compilación exitosa
 
-## Resumen Ejecutivo
+## Resumen
 
-Se completó exitosamente la migración completa del backend de FullSound desde MySQL a PostgreSQL, sincronizando todas las capas de la arquitectura MVC con el schema definitivo de la base de datos.
+Migración completa del backend de FullSound desde MySQL a PostgreSQL, sincronizando todas las capas MVC con el schema definitivo de la base de datos.
 
-## Cambios Implementados
+## Cambios Principales
 
-### 1. Entities (Modelos JPA)
+### Entities
 
-#### ✅ Usuario.java
-- Corregida join table `usuario_roles` con columnas: `id_usuario`, `id_tipo_usuario`
-- Agregado campo `updatedAt` tipo `LocalDateTime`
+**Usuario:**
+- Join table `usuario_roles` con columnas: `id_usuario`, `id_tipo_usuario`
+- Campo `updatedAt` tipo `LocalDateTime`
 
-#### ✅ Rol.java
-- Agregado campo `descripcion` tipo `VARCHAR(255)`
+**Rol:**
+- Campo `descripcion` tipo `VARCHAR(255)`
 
-#### ✅ Beat.java - REFACTORIZACIÓN COMPLETA
-**Campos Eliminados:**
-- `mood` (String)
-- `tags` (String)
-- `archivoAudio` (String)
-- `imagenPortada` (String)
-- `descargas` (Integer)
-- `likes` (Integer)
-- `destacado` (Boolean)
-- `activo` (Boolean)
+**Beat - Refactorización Completa:**
 
-**Campos Agregados:**
-- `duracion` (Integer) - duración en segundos
-- `genero` (String) - Trap, Lo-Fi, Hip Hop, etc.
-- `etiquetas` (String) - reemplaza tags
-- `descripcion` (String) - texto descriptivo
-- `imagenUrl` (String) - reemplaza imagenPortada
-- `audioUrl` (String) - reemplaza archivoAudio
-- `audioDemoUrl` (String) - URL del demo de 30 segundos
+Campos eliminados:
+- mood, tags, archivoAudio, imagenPortada
+- descargas, likes, destacado, activo
 
-**Cambio de Tipos:**
-- `estado`: `EstadoBeat enum` → `String` (DISPONIBLE, VENDIDO, RESERVADO, INACTIVO)
+Campos agregados:
+- duracion (Integer) - segundos
+- genero (String) - Trap, Lo-Fi, Hip Hop
+- etiquetas (String) - reemplaza tags
+- descripcion (String)
+- imagenUrl, audioUrl, audioDemoUrl (String)
 
-#### ✅ Pedido.java
-**Cambios de Tipos:**
-- `estado`: `EstadoPedido enum` → `String` (PENDIENTE, PROCESANDO, COMPLETADO, CANCELADO, REEMBOLSADO)
-- `metodoPago`: `MetodoPago enum` → `String` (TARJETA, TRANSFERENCIA, PAYPAL)
+**Pedido:**
+- estado: enum → String (PENDIENTE, PROCESANDO, COMPLETADO, CANCELADO, REEMBOLSADO)
+- metodoPago: enum → String (TARJETA, TRANSFERENCIA, PAYPAL)
 
-#### ✅ PedidoItem.java
-- Sin cambios (ya sincronizado con schema)
+**Pago:**
+- estado: enum → String (PENDIENTE, PROCESANDO, COMPLETADO, FALLIDO, REEMBOLSADO)
+- Campo metadata eliminado
 
-#### ✅ Pago.java
-**Cambios:**
-- `estado`: `EstadoPago enum` → `String` (PENDIENTE, PROCESANDO, COMPLETADO, FALLIDO, REEMBOLSADO)
-- Campo `metadata` eliminado
+### DTOs
 
----
+Sincronizados con cambios de entities. Estados validados con @Pattern en lugar de enums.
 
-### 2. DTOs (Data Transfer Objects)
+### Repositories
 
-#### ✅ BeatRequest.java & BeatResponse.java
-- Sincronizados con cambios de Beat entity
-- Agregados: duracion, genero, etiquetas, descripcion, imagenUrl, audioUrl, audioDemoUrl
-- Eliminados: mood, tags, archivoAudio, imagenPortada, descargas, likes, destacado, activo
-- `estado` ahora es String con validación `@Pattern`
+**BeatRepository - Limpieza:**
 
-#### ✅ PedidoRequest.java & PedidoResponse.java
-- `estado`: enum → String con `@Pattern(regexp="PENDIENTE|PROCESANDO|COMPLETADO|CANCELADO|REEMBOLSADO")`
-- `metodoPago`: enum → String con `@Pattern(regexp="TARJETA|TRANSFERENCIA|PAYPAL")`
+Métodos eliminados (campos inexistentes):
+- findByActivo, findByDestacadoTrueAndActivoTrue
+- findTopByOrderByDescargasDesc, findTopByOrderByLikesDesc
 
-#### ✅ PagoResponse.java
-- `estado`: enum → String con `@Pattern(regexp="PENDIENTE|PROCESANDO|COMPLETADO|FALLIDO|REEMBOLSADO")`
+Métodos actualizados:
+- findByEstado(String estado) - antes usaba enum
+- search(@Param("query")) - busca en etiquetas y genero
 
----
+Métodos nuevos:
+- findAllAvailable() - reemplaza búsqueda por activo=true
+- findByGeneroContainingIgnoreCase(String genero)
 
-### 3. Repositories
+**PedidoRepository y PagoRepository:**
+- Parámetros String en lugar de enums
 
-#### ✅ BeatRepository.java - LIMPIEZA COMPLETA
-**Métodos Eliminados (campos inexistentes):**
-- `findByActivo(Boolean activo)`
-- `findByActivoTrue()`
-- `findByDestacadoTrueAndActivoTrue()`
-- `findByEstadoAndActivoTrue(EstadoBeat)`
-- `findByPrecioBetweenAndActivoTrue()`
-- `findByBpmBetweenAndActivoTrue()`
-- `findByTonalidadAndActivoTrue()`
-- `findByMoodContainingIgnoreCaseAndActivoTrue()`
-- `findTopByOrderByDescargasDesc()`
-- `findTopByOrderByLikesDesc()`
+### Services
 
-**Métodos Actualizados:**
-- `findByEstado(String estado)` - antes usaba enum EstadoBeat
-- `search(@Param("query"))` - actualizado para buscar en `etiquetas` y `genero`
+**PedidoServiceImpl:**
+- Eliminada validación beat.getActivo()
+- Estados como String: "PENDIENTE", "COMPLETADO", etc.
+- Sin conversión EstadoPedido.valueOf()
 
-**Métodos Nuevos:**
-- `findAllAvailable()` - reemplaza búsquedas por activo=true
-- `findByGeneroContainingIgnoreCase(String genero)`
-- `findTopByOrderByCreatedAtDesc(int limit)` - reemplaza ordenamiento por descargas/likes
+**PagoServiceImpl:**
+- Estados Stripe mapeados a String
+- Comparaciones: "COMPLETADO".equals(estado)
 
-#### ✅ PedidoRepository.java
-**Cambios:**
-- `findByUsuarioAndEstado(Usuario, String estado)` - antes usaba enum EstadoPedido
-- `findByEstadoOrderByFechaCompraDesc(String estado)` - antes usaba enum
+### Controllers
 
-#### ✅ PagoRepository.java
-**Cambios:**
-- `findByEstado(String estado)` - antes usaba enum EstadoPago
+**PedidoController:**
+- updateEstado(@RequestParam String estado) - antes usaba enum
 
-#### ✅ UsuarioRepository.java & RolRepository.java
-- Sin cambios (ya estaban correctos)
+### Mappers
 
----
-
-### 4. Services
-
-#### ✅ PedidoServiceImpl.java
-**Cambios Críticos:**
-- Eliminada validación `beat.getActivo()` (campo no existe)
-- Cambiado `EstadoPedido.PENDIENTE.name()` → `"PENDIENTE"`
-- Cambiado `request.getMetodoPago().name()` → `request.getMetodoPago()` (ya es String)
-- Método `updateEstado()`: eliminada conversión `EstadoPedido.valueOf()`
-- Lógica de actualización de beats: eliminadas referencias a `beat.setActivo()`
-- Comparaciones de estado usan String: `"COMPLETADO".equals(estado)`
-
-#### ✅ PagoServiceImpl.java
-**Cambios Críticos:**
-- Validación de pago existente: `"COMPLETADO".equals(p.getEstado())` (antes comparaba enum)
-- Creación de pago: `pago.setEstado("PENDIENTE")` (antes usaba enum)
-- Estados de Stripe mapeados a String: `"COMPLETADO"`, `"FALLIDO"`, `"PROCESANDO"`
-- Actualización de pedido: `pedido.setEstado("COMPLETADO")` (sin enum)
-
-#### ✅ BeatService.java & AuthService.java
-- Sin cambios necesarios (ya usaban tipos correctos)
-
----
-
-### 5. Controllers
-
-#### ✅ PedidoController.java
-**Cambio:**
-- `updateEstado(@RequestParam String estado)` - antes usaba `EstadoPedido enum`
-- Eliminado import de `EstadoPedido`
-
-#### ✅ BeatController.java, AuthController.java, etc.
-- Sin cambios (ya usaban DTOs correctos)
-
----
-
-### 6. Mappers (MapStruct)
-
-#### ✅ BeatMapper.java
-- Agregado `unmappedTargetPolicy = ReportingPolicy.IGNORE` en método `updateEntity()`
-- Soluciona warnings sobre campos "likes" y "activo" que ya no existen
-
-#### ✅ UsuarioMapper.java, PedidoMapper.java, PagoMapper.java
-- Sin cambios necesarios (MapStruct genera implementaciones correctamente)
-
----
-
-### 7. Archivos Obsoletos (Enums)
-
-Los siguientes enums **NO fueron eliminados físicamente** pero **ya no se usan en el código**:
-- `EstadoBeat.java`
-- `EstadoPedido.java`
-- `EstadoPago.java`
-- `MetodoPago.java`
-- `RolUsuario.java`
-
-**Recomendación:** Pueden eliminarse manualmente o conservarse como referencia histórica.
-
----
+**BeatMapper:**
+- unmappedTargetPolicy = ReportingPolicy.IGNORE
+- Soluciona warnings sobre campos eliminados
 
 ## Schema PostgreSQL Aplicado
 
@@ -255,180 +169,38 @@ CREATE TABLE pago (
 );
 ```
 
----
+## Validación
 
-## Validación de Compilación
-
-### ✅ Comando Ejecutado
+Compilación exitosa:
 ```powershell
-mvnw.cmd clean compile
-```
-
-### ✅ Resultado
-```
-[INFO] BUILD SUCCESS
-[INFO] Total time:  43.268 s
-[INFO] Finished at: 2025-11-30T20:42:51-03:00
-```
-
-### ⚠️ Warnings (no críticos)
-1. **BeatMapper**: "Unmapped target properties: likes, activo"
-   - **Causa:** MapStruct detecta campos en caché de versión anterior
-   - **Solución aplicada:** `unmappedTargetPolicy = ReportingPolicy.IGNORE`
-   
-2. **SecurityConfig**: Uso de API deprecada en DaoAuthenticationProvider
-   - **Impacto:** Ninguno, funciona correctamente en Spring Boot 3.5.7
-   - **Acción recomendada:** Actualizar a AuthenticationManagerBuilder en futuro
-
----
-
-## Pruebas de Integración Pendientes
-
-- [ ] Ejecutar migraciones SQL en base PostgreSQL
-- [ ] Insertar datos de prueba (tipo_usuario, usuario, beats)
-- [ ] Probar endpoints CRUD de beats con Swagger UI
-- [ ] Probar flujo completo de compra: crear pedido → crear pago → confirmar
-- [ ] Verificar validaciones de @Pattern en DTOs con Postman
-- [ ] Probar autenticación JWT con roles (cliente/administrador)
-
----
-
-## Checklist de Sincronización ✅
-
-### Capa de Modelo (Entities)
-- [x] Usuario con updated_at y join columns correctos
-- [x] Rol con descripcion
-- [x] Beat con 7 nuevos campos y 8 campos eliminados
-- [x] Pedido con estado/metodoPago como String
-- [x] Pago con estado como String
-
-### Capa de DTO
-- [x] BeatRequest/Response sincronizados
-- [x] PedidoRequest/Response con validaciones @Pattern
-- [x] PagoResponse con estado String
-
-### Capa de Repositorio
-- [x] BeatRepository sin métodos de campos inexistentes
-- [x] PedidoRepository con parámetros String
-- [x] PagoRepository con parámetros String
-
-### Capa de Servicio
-- [x] PedidoServiceImpl sin referencias a enums
-- [x] PagoServiceImpl sin referencias a enums
-- [x] Lógica de negocio adaptada a campos actuales
-
-### Capa de Controller
-- [x] PedidoController con @RequestParam String
-- [x] Todos los controllers usando DTOs correctos
-
-### Mappers
-- [x] MapStruct sin warnings críticos
-- [x] Políticas de unmapped targets configuradas
-
----
-
-## Comandos Útiles
-
-### Compilación
-```powershell
-$env:JAVA_HOME="C:\Program Files\Java\jdk-21"
-$env:PATH="$env:JAVA_HOME\bin;$env:PATH"
-cd "c:\Repositorios Git\FULLSOUND-SPRINGBOOT\BackEnd\Fullsound"
 .\mvnw.cmd clean compile
+# BUILD SUCCESS (43.268 s)
 ```
-
-### Empaquetado (sin tests)
-```powershell
-.\mvnw.cmd package -DskipTests
-```
-
-### Ejecución
-```powershell
-.\mvnw.cmd spring-boot:run
-```
-
-### Swagger UI
-Una vez ejecutando, acceder a:
-```
-http://localhost:8080/swagger-ui/index.html
-```
-
----
 
 ## Archivos Modificados
 
-### Entities (6 archivos)
-- Usuario.java
-- Rol.java
-- Beat.java
-- Pedido.java
-- PedidoItem.java
-- Pago.java
+- 6 Entities (Usuario, Rol, Beat, Pedido, PedidoItem, Pago)
+- 6 DTOs (BeatRequest/Response, PedidoRequest/Response, PagoRequest/Response)
+- 3 Repositories (BeatRepository, PedidoRepository, PagoRepository)
+- 2 Services (PedidoServiceImpl, PagoServiceImpl)
+- 1 Controller (PedidoController)
+- 1 Mapper (BeatMapper)
 
-### DTOs (6 archivos)
-- BeatRequest.java
-- BeatResponse.java
-- PedidoRequest.java
-- PedidoResponse.java
-- PagoRequest.java
-- PagoResponse.java
-
-### Repositories (3 archivos)
-- BeatRepository.java
-- PedidoRepository.java
-- PagoRepository.java
-
-### Services (2 archivos)
-- PedidoServiceImpl.java
-- PagoServiceImpl.java
-
-### Controllers (1 archivo)
-- PedidoController.java
-
-### Mappers (1 archivo)
-- BeatMapper.java
-
-**Total: 19 archivos modificados**
-
----
+Total: 19 archivos
 
 ## Notas Técnicas
 
-### ID Types
-- PostgreSQL usa `SERIAL` → JPA usa `@GeneratedValue(strategy = IDENTITY)` con `Integer`
-- NO usar `Long` o `BigInteger` para IDs en este proyecto
+- IDs: INTEGER con SERIAL para auto-incremento
+- Estados: VARCHAR validados con @Pattern en DTOs
+- Join table: id_usuario, id_tipo_usuario (no camelCase)
+- Campos de auditoría: created_at, updated_at (LocalDateTime)
 
-### Estado Fields
-- Todos los estados son VARCHAR(20) en base de datos
-- Usar String en Java con validación @Pattern en DTOs
-- Valores permitidos definidos en comentarios y constraints
+## Próximos Pasos
 
-### Campos de Auditoría
-- `created_at`: tipo `LocalDateTime`, generado automáticamente
-- `updated_at`: tipo `LocalDateTime`, actualizado manualmente o con triggers
-
-### Join Table usuario_roles
-- Nombres de columna: `id_usuario`, `id_tipo_usuario` (NO camelCase)
-- Configuración correcta en `@JoinTable` de Usuario.java
-
----
-
-## Conclusión
-
-✅ **Migración 100% completada y validada con compilación exitosa.**
-
-El backend de FullSound está ahora completamente sincronizado con el schema PostgreSQL definitivo. Todos los enums fueron reemplazados por String con validaciones, todos los campos obsoletos eliminados, y todos los campos nuevos implementados correctamente.
-
-La arquitectura MVC está consistente en todas sus capas:
-- **Model** ↔️ **PostgreSQL Schema**
-- **Repository** ↔️ **Model**
-- **Service** ↔️ **Repository + Business Logic**
-- **Controller** ↔️ **Service + DTOs**
-- **DTO** ↔️ **Frontend/API Clients**
-
-**Próximos pasos recomendados:**
-1. Ejecutar scripts SQL en base de datos PostgreSQL
-2. Configurar credenciales de base de datos en `application.properties`
-3. Ejecutar aplicación y verificar logs
+1. Ejecutar scripts SQL en PostgreSQL
+2. Configurar credenciales en application.properties
+3. Verificar logs al ejecutar
 4. Probar endpoints con Swagger UI
-5. Implementar tests unitarios para servicios actualizados
+5. Implementar tests unitarios
+
+Copyright 2025 FULLSOUND. Todos los derechos reservados.

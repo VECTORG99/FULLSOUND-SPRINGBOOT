@@ -1,5 +1,4 @@
 package Fullsound.Fullsound.controller;
-
 import Fullsound.Fullsound.dto.request.LoginRequest;
 import Fullsound.Fullsound.dto.request.RegisterRequest;
 import Fullsound.Fullsound.dto.response.AuthResponse;
@@ -16,25 +15,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-/**
- * Controlador REST para autenticación y registro.
- */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000", "http://localhost:4200", "http://localhost:8080"})
 @Tag(name = "🔐 Autenticación", description = "Endpoints para registro, login y gestión de autenticación JWT")
 public class AuthController {
-
     private final AuthService authService;
-
-    /**
-     * Registra un nuevo usuario.
-     *
-     * @param request datos del registro
-     * @return respuesta con mensaje de éxito
-     */
     @Operation(
         summary = "Registrar nuevo usuario",
         description = "Crea una nueva cuenta de usuario en el sistema. El usuario recibe por defecto el rol 'cliente'."
@@ -59,13 +46,6 @@ public class AuthController {
         MessageResponse response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-
-    /**
-     * Inicia sesión y obtiene token JWT.
-     *
-     * @param request credenciales de login
-     * @return respuesta con token y datos del usuario
-     */
     @Operation(
         summary = "Iniciar sesión",
         description = "Autentica un usuario y devuelve un token JWT válido por 24 horas."
@@ -87,12 +67,6 @@ public class AuthController {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
-
-    /**
-     * Endpoint para verificar que el servidor está activo.
-     *
-     * @return mensaje de bienvenida
-     */
     @Operation(
         summary = "Health Check",
         description = "Verifica que el servicio de autenticación está funcionando correctamente."

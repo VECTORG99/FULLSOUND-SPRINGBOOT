@@ -1,19 +1,9 @@
 package Fullsound.Fullsound.dto.response;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.util.List;
-
-/**
- * DTO de respuesta para autenticación.
- * 
- * @author VECTORG99
- * @version 1.0.0
- * @since 2025-11-13
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,7 +15,6 @@ public class AuthResponse {
     private String nombreUsuario;
     private String correo;
     private List<String> roles;
-    
     public AuthResponse(String token, Integer usuarioId, String nombreUsuario, String correo, List<String> roles) {
         this.token = token;
         this.tipo = "Bearer";

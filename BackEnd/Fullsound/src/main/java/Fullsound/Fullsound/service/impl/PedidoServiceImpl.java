@@ -1,5 +1,4 @@
 package Fullsound.Fullsound.service.impl;
-
 import Fullsound.Fullsound.dto.request.PedidoRequest;
 import Fullsound.Fullsound.dto.response.PedidoResponse;
 import Fullsound.Fullsound.exception.BadRequestException;
@@ -16,82 +15,56 @@ import Fullsound.Fullsound.service.PedidoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-/**
- * Implementación del servicio de pedidos.
- */
 @Service
 @RequiredArgsConstructor
 public class PedidoServiceImpl implements PedidoService {
-
     private final PedidoRepository pedidoRepository;
     private final UsuarioRepository usuarioRepository;
     private final BeatRepository beatRepository;
     private final PedidoMapper pedidoMapper;
-
     @Override
     @Transactional
     public PedidoResponse create(PedidoRequest request, Integer usuarioId) {
-        // Buscar usuario
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", "id", usuarioId.toString()));
-
-        // Validar que hay beats en el pedido
         if (request.getBeatIds() == null || request.getBeatIds().isEmpty()) {
             throw new BadRequestException("El pedido debe contener al menos un beat");
         }
-
-        // Buscar todos los beats
         List<Beat> beats = new ArrayList<>();
         for (Integer beatId : request.getBeatIds()) {
             Beat beat = beatRepository.findById(beatId)
                     .orElseThrow(() -> new ResourceNotFoundException("Beat", "id", beatId.toString()));
-            
-            // Validar que el beat está disponible
             if (!"DISPONIBLE".equals(beat.getEstado())) {
                 throw new BadRequestException("El beat '" + beat.getTitulo() + "' no está disponible");
             }
-            
             beats.add(beat);
         }
-
-        // Crear pedido
         Pedido pedido = new Pedido();
         pedido.setUsuario(usuario);
         pedido.setFechaCompra(LocalDateTime.now());
         pedido.setEstado("PENDIENTE");
         pedido.setMetodoPago(request.getMetodoPago());
-
-        // Crear items del pedido
         List<PedidoItem> items = new ArrayList<>();
         Integer total = 0;
-
         for (Beat beat : beats) {
             PedidoItem item = new PedidoItem();
             item.setPedido(pedido);
             item.setBeat(beat);
-            item.setNombreItem(beat.getTitulo()); // Snapshot del nombre
-            item.setCantidad(1); // Siempre 1 por beat
+            item.setNombreItem(beat.getTitulo());  
+            item.setCantidad(1);  
             item.setPrecioUnitario(beat.getPrecio());
-            
             items.add(item);
             total += beat.getPrecio();
         }
-
         pedido.setItems(items);
         pedido.setTotal(total);
-
-        // Guardar pedido (cascade guardará los items)
         Pedido pedidoGuardado = pedidoRepository.save(pedido);
-
         return pedidoMapper.toResponse(pedidoGuardado);
     }
-
     @Override
     @Transactional(readOnly = true)
     public PedidoResponse getById(Integer id) {
@@ -99,7 +72,6 @@ public class PedidoServiceImpl implements PedidoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", "id", id.toString()));
         return pedidoMapper.toResponse(pedido);
     }
-
     @Override
     @Transactional(readOnly = true)
     public PedidoResponse getByNumeroPedido(String numeroPedido) {
@@ -107,19 +79,16 @@ public class PedidoServiceImpl implements PedidoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", "numeroPedido", numeroPedido));
         return pedidoMapper.toResponse(pedido);
     }
-
     @Override
     @Transactional(readOnly = true)
     public List<PedidoResponse> getByUsuario(Integer usuarioId) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", "id", usuarioId.toString()));
-        
         List<Pedido> pedidos = pedidoRepository.findByUsuarioOrderByFechaCompraDesc(usuario);
         return pedidos.stream()
                 .map(pedidoMapper::toResponse)
                 .collect(Collectors.toList());
     }
-
     @Override
     @Transactional(readOnly = true)
     public List<PedidoResponse> getAll() {
@@ -128,16 +97,12 @@ public class PedidoServiceImpl implements PedidoService {
                 .map(pedidoMapper::toResponse)
                 .collect(Collectors.toList());
     }
-
     @Override
     @Transactional
     public PedidoResponse updateEstado(Integer id, String estado) {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido", "id", id.toString()));
-        
         pedido.setEstado(estado);
-        
-        // Si el pedido se completa, marcar beats como vendidos
         if ("COMPLETADO".equals(estado)) {
             for (PedidoItem item : pedido.getItems()) {
                 Beat beat = item.getBeat();
@@ -145,8 +110,6 @@ public class PedidoServiceImpl implements PedidoService {
                 beatRepository.save(beat);
             }
         }
-        
-        // Si el pedido se cancela, liberar beats
         if ("CANCELADO".equals(estado) || "REEMBOLSADO".equals(estado)) {
             for (PedidoItem item : pedido.getItems()) {
                 Beat beat = item.getBeat();
@@ -156,7 +119,6 @@ public class PedidoServiceImpl implements PedidoService {
                 }
             }
         }
-        
         Pedido pedidoActualizado = pedidoRepository.save(pedido);
         return pedidoMapper.toResponse(pedidoActualizado);
     }

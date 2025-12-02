@@ -1,0 +1,22 @@
+version: 1.0
+runtime: docker
+build:
+  commands:
+    prebuild:
+      - echo "Building FullSound Backend..."
+    build:
+      - docker build -t fullsound-backend .
+    postbuild:
+      - echo "Build completed"
+
+run:
+  runtime-version: 17
+  command: sh -c "java $JAVA_OPTS -jar app.jar"
+  network:
+    port: 8080
+    env:
+      - name: SERVER_PORT
+        value: "8080"
+  env:
+    - name: SPRING_PROFILES_ACTIVE
+      value: "production"

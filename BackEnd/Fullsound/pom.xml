@@ -6,7 +6,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.5.7</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/>  
 	</parent>
 	<groupId>com.fullsound</groupId>
 	<artifactId>fullsound-frontend</artifactId>
@@ -14,64 +14,46 @@
 	<name>FullSound Frontend Server</name>
 	<description>Frontend React servido por Spring Boot (AWS Ready)</description>
 	<packaging>jar</packaging>
-	
 	<properties>
 		<java.version>17</java.version>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		
-		<!-- Frontend configuration -->
 		<frontend.directory>${project.basedir}/../../FrontEnd</frontend.directory>
 		<node.version>v20.11.0</node.version>
 		<npm.version>10.2.4</npm.version>
 	</properties>
-	
 	<dependencies>
-		<!-- Spring Boot Web Starter (para servir archivos estáticos) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-		
-		<!-- Spring Boot Data JPA -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
-		
-		<!-- Spring Boot Data REST -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-rest</artifactId>
 		</dependency>
-		<!-- Dotenv para variables de entorno desde .env -->
 		<dependency>
 			<groupId>io.github.cdimascio</groupId>
 			<artifactId>dotenv-java</artifactId>
 			<version>3.0.0</version>
 		</dependency>
-		
-		<!-- Spring Boot HATEOAS -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-hateoas</artifactId>
 		</dependency>
-		
-		<!-- Spring Security -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
-		
-		<!-- Spring Security Test -->
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		
-		<!-- JWT Support -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-api</artifactId>
@@ -89,21 +71,15 @@
 			<version>0.11.5</version>
 			<scope>runtime</scope>
 		</dependency>
-		
-		<!-- Stripe Java SDK -->
 		<dependency>
 			<groupId>com.stripe</groupId>
 			<artifactId>stripe-java</artifactId>
 			<version>24.3.0</version>
 		</dependency>
-		
-		<!-- Validation -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
-		
-		<!-- MapStruct -->
 		<dependency>
 			<groupId>org.mapstruct</groupId>
 			<artifactId>mapstruct</artifactId>
@@ -115,55 +91,45 @@
 			<version>1.5.5.Final</version>
 			<scope>provided</scope>
 		</dependency>
-		
-		<!-- PostgreSQL Driver -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-		
-		<!-- Lombok -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
-		
-		<!-- Spring Boot DevTools (hot reload en desarrollo) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
 			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
-		
-		<!-- Spring Boot Actuator (para health checks de AWS) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
-		
-		<!-- Springdoc OpenAPI (Swagger) - Compatible con Spring Boot 3.5.x -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>2.8.4</version>
 		</dependency>
-		
-		<!-- Testing -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
-	
 	<build>
 		<finalName>fullsound-frontend</finalName>
-		
 		<plugins>
-			<!-- Maven Compiler Plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -189,8 +155,6 @@
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
-			
-			<!-- Spring Boot Maven Plugin -->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
@@ -204,22 +168,17 @@
 					</excludes>
 				</configuration>
 			</plugin>
-			
-			<!-- Frontend Maven Plugin (para compilar React) -->
 			<plugin>
 				<groupId>com.github.eirslett</groupId>
 				<artifactId>frontend-maven-plugin</artifactId>
 				<version>1.15.0</version>
-				
 				<configuration>
 					<workingDirectory>${frontend.directory}</workingDirectory>
 					<installDirectory>${project.build.directory}</installDirectory>
 					<nodeVersion>${node.version}</nodeVersion>
 					<npmVersion>${npm.version}</npmVersion>
 				</configuration>
-				
 				<executions>
-					<!-- Instalar Node y NPM -->
 					<execution>
 						<id>install-node-and-npm</id>
 						<goals>
@@ -227,8 +186,6 @@
 						</goals>
 						<phase>generate-resources</phase>
 					</execution>
-					
-					<!-- NPM Install -->
 					<execution>
 						<id>npm-install</id>
 						<goals>
@@ -239,8 +196,6 @@
 							<arguments>install</arguments>
 						</configuration>
 					</execution>
-					
-					<!-- NPM Build (producción) -->
 					<execution>
 						<id>npm-build</id>
 						<goals>
@@ -253,8 +208,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			
-			<!-- Maven Resources Plugin (copiar archivos React al JAR) -->
 			<plugin>
 				<artifactId>maven-resources-plugin</artifactId>
 				<version>3.3.1</version>
@@ -277,8 +230,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			
-			<!-- Maven Clean Plugin (limpiar archivos generados) -->
 			<plugin>
 				<artifactId>maven-clean-plugin</artifactId>
 				<version>3.3.2</version>
@@ -295,9 +246,7 @@
 			</plugin>
 		</plugins>
 	</build>
-	
 	<profiles>
-		<!-- Perfil de Desarrollo (sin compilar frontend) -->
 		<profile>
 			<id>dev</id>
 			<activation>
@@ -312,7 +261,6 @@
 						<groupId>com.github.eirslett</groupId>
 						<artifactId>frontend-maven-plugin</artifactId>
 						<executions>
-							<!-- Deshabilitar todo el frontend en dev -->
 							<execution>
 								<id>install-node-and-npm</id>
 								<phase>none</phase>
@@ -339,16 +287,12 @@
 				</plugins>
 			</build>
 		</profile>
-		
-		<!-- Perfil de Producción (compilar frontend) -->
 		<profile>
 			<id>prod</id>
 			<properties>
 				<spring.profiles.active>production</spring.profiles.active>
 			</properties>
 		</profile>
-		
-		<!-- Perfil Skip Frontend (solo backend) -->
 		<profile>
 			<id>skip-frontend</id>
 			<build>
@@ -375,5 +319,4 @@
 			</build>
 		</profile>
 	</profiles>
-
 </project>
