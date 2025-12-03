@@ -15,41 +15,41 @@ jobs:
     steps:
       - name: Checkout Backend code
         uses: actions/checkout@v4
+        with:
+          path: backend
       
-      - name: Download latest frontend build
-        run: |
-          echo "Downloading latest frontend build from GitHub releases..."
-          
-          RELEASE_URL="https://api.github.com/repos/Axel-DaMage/FullSound_React/releases/latest"
-          
-          curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            "$RELEASE_URL" > release.json
-          
-          cat release.json
-          
-          DOWNLOAD_URL=$(cat release.json | grep "browser_download_url.*frontend-build.zip" | cut -d '"' -f 4)
-          
-          if [ -z "$DOWNLOAD_URL" ]; then
-            echo "ERROR: No frontend build found in latest release"
-            echo "Please ensure frontend has been built and released first"
-            exit 1
-          fi
-          
-          echo "Downloading from: $DOWNLOAD_URL"
-          curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -o frontend-build.zip "$DOWNLOAD_URL"
-          
-          echo "Frontend build downloaded successfully"
-          ls -lh frontend-build.zip
+      - name: Checkout Frontend code
+        uses: actions/checkout@v4
+        with:
+          repository: Axel-DaMage/FullSound_React
+          ref: testing-frontend-release
+          path: frontend
+          token: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Extract frontend build to static resources
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Build Frontend
+        working-directory: ./frontend
         run: |
-          echo "Extracting frontend build..."
-          mkdir -p BackEnd/Fullsound/src/main/resources/static
-          unzip -o frontend-build.zip -d BackEnd/Fullsound/src/main/resources/static/
-          echo "Files extracted successfully"
-          ls -la BackEnd/Fullsound/src/main/resources/static/
+          echo "Installing frontend dependencies..."
+          npm ci
+          echo "Building frontend for production..."
+          npm run build
+          echo "Frontend build completed"
+          ls -la dist/
+      
+      - name: Copy Frontend to Backend static resources
+        run: |
+          echo "Copying frontend build to backend static resources..."
+          mkdir -p backend/BackEnd/Fullsound/src/main/resources/static
+          cp -r frontend/dist/* backend/BackEnd/Fullsound/src/main/resources/static/
+          echo "Files copied successfully"
+          ls -la backend/BackEnd/Fullsound/src/main/resources/static/
       
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -62,10 +62,10 @@ jobs:
         run: |
           java -version
           mvn -version
-          ls -la BackEnd/Fullsound/
+          ls -la backend/BackEnd/Fullsound/
       
       - name: Build Backend with Maven
-        working-directory: ./BackEnd/Fullsound
+        working-directory: ./backend/BackEnd/Fullsound
         run: |
           echo "Building backend with embedded frontend..."
           mvn clean package -DskipTests -X
@@ -86,7 +86,7 @@ jobs:
           aws s3 mb s3://${BUCKET_NAME} --region us-east-1 2>/dev/null || echo "Bucket already exists"
       
       - name: Upload JAR to S3
-        working-directory: ./BackEnd/Fullsound
+        working-directory: ./backend/BackEnd/Fullsound
         run: |
           BUCKET_NAME="fullsound-deployments-${{ secrets.AWS_ACCOUNT_ID }}"
           TIMESTAMP=$(date +%Y%m%d-%H%M%S)
