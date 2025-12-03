@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Axel-DaMage/FullSound_React
-          ref: testing-frontend-release
+          ref: main
           path: frontend
           token: ${{ secrets.GITHUB_TOKEN }}
       
