@@ -13,8 +13,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout Backend code
         uses: actions/checkout@v4
+      
+      - name: Download latest frontend build
+        run: |
+          echo "Downloading latest frontend build from GitHub releases..."
+          
+          RELEASE_URL="https://api.github.com/repos/VECTORG99/FullSound_React/releases/latest"
+          
+          curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "$RELEASE_URL" > release.json
+          
+          cat release.json
+          
+          DOWNLOAD_URL=$(cat release.json | grep "browser_download_url.*frontend-build.zip" | cut -d '"' -f 4)
+          
+          if [ -z "$DOWNLOAD_URL" ]; then
+            echo "ERROR: No frontend build found in latest release"
+            echo "Please ensure frontend has been built and released first"
+            exit 1
+          fi
+          
+          echo "Downloading from: $DOWNLOAD_URL"
+          curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -o frontend-build.zip "$DOWNLOAD_URL"
+          
+          echo "Frontend build downloaded successfully"
+          ls -lh frontend-build.zip
+      
+      - name: Extract frontend build to static resources
+        run: |
+          echo "Extracting frontend build..."
+          mkdir -p BackEnd/Fullsound/src/main/resources/static
+          unzip -o frontend-build.zip -d BackEnd/Fullsound/src/main/resources/static/
+          echo "Files extracted successfully"
+          ls -la BackEnd/Fullsound/src/main/resources/static/
       
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -29,10 +64,10 @@ jobs:
           mvn -version
           ls -la BackEnd/Fullsound/
       
-      - name: Build with Maven
+      - name: Build Backend with Maven
         working-directory: ./BackEnd/Fullsound
         run: |
-          echo "Building project..."
+          echo "Building backend with embedded frontend..."
           mvn clean package -DskipTests -X
           echo "Build completed"
           ls -la target/

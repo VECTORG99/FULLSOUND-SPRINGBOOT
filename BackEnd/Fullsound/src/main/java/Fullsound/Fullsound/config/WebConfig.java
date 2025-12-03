@@ -1,11 +1,19 @@
 package Fullsound.Fullsound.config;
+
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.resource.PathResourceResolver;
+
+import java.io.IOException;
+
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-    private static final String FORWARD_INDEX = "forward:/index.html";
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
@@ -14,17 +22,27 @@ public class WebConfig implements WebMvcConfigurer {
             .allowedHeaders("*")
             .allowCredentials(true);
     }
+
     @Override
-    public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/").setViewName(FORWARD_INDEX);
-        registry.addViewController("/beats").setViewName(FORWARD_INDEX);
-        registry.addViewController("/carrito").setViewName(FORWARD_INDEX);
-        registry.addViewController("/admin").setViewName(FORWARD_INDEX);
-        registry.addViewController("/login").setViewName(FORWARD_INDEX);
-        registry.addViewController("/registro").setViewName(FORWARD_INDEX);
-        registry.addViewController("/terminos").setViewName(FORWARD_INDEX);
-        registry.addViewController("/creditos").setViewName(FORWARD_INDEX);
-        registry.addViewController("/main").setViewName(FORWARD_INDEX);
-        registry.addViewController("/producto/{id}").setViewName(FORWARD_INDEX);
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/**")
+            .addResourceLocations("classpath:/static/")
+            .resourceChain(true)
+            .addResolver(new PathResourceResolver() {
+                @Override
+                protected Resource getResource(String resourcePath, Resource location) throws IOException {
+                    Resource requestedResource = location.createRelative(resourcePath);
+                    
+                    if (requestedResource.exists() && requestedResource.isReadable()) {
+                        return requestedResource;
+                    }
+                    
+                    if (!resourcePath.startsWith("api/")) {
+                        return new ClassPathResource("/static/index.html");
+                    }
+                    
+                    return null;
+                }
+            });
     }
 }
