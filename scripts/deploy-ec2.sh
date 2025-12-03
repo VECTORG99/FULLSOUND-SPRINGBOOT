@@ -40,29 +40,17 @@ if [ -z "$JWT_SECRET" ]; then
     exit 1
 fi
 
-# Crear archivo de configuración
-cat > $APP_DIR/application-prod.properties << EOF
-server.port=8080
-server.forward-headers-strategy=framework
-spring.datasource.url=jdbc:postgresql://aws-0-us-west-2.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0
-spring.datasource.username=postgres.kivpcepyhfpqjfoycwel
-spring.datasource.password=${DB_PASSWORD}
-spring.datasource.driver-class-name=org.postgresql.Driver
-spring.datasource.hikari.maximum-pool-size=10
-spring.datasource.hikari.minimum-idle=5
-spring.datasource.hikari.connection-timeout=30000
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=false
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
-jwt.secret=${JWT_SECRET}
-jwt.expiration=86400000
-EOF
+# Las variables de entorno ya están exportadas y serán usadas por Spring Boot
+echo "Configurando variables de entorno para la aplicación..."
+echo "DB_PASSWORD configurado: ${DB_PASSWORD:0:3}***"
+echo "JWT_SECRET configurado: ${JWT_SECRET:0:10}***"
 
-# Ejecutar aplicación en background
+# Ejecutar aplicación en background con variables de entorno
 echo "Iniciando aplicación..."
-nohup java -jar $APP_DIR/$JAR_NAME \
-    --spring.config.location=$APP_DIR/application-prod.properties \
-    > $LOG_FILE 2>&1 &
+export DB_PASSWORD="$DB_PASSWORD"
+export JWT_SECRET="$JWT_SECRET"
+
+nohup java -jar $APP_DIR/$JAR_NAME > $LOG_FILE 2>&1 &
 
 PID=$!
 echo "Aplicación iniciada con PID: $PID"
