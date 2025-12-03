@@ -20,7 +20,7 @@ jobs:
         run: |
           echo "Downloading latest frontend build from GitHub releases..."
           
-          RELEASE_URL="https://api.github.com/repos/VECTORG99/FullSound_React/releases/latest"
+          RELEASE_URL="https://api.github.com/repos/Axel-DaMage/FullSound_React/releases/latest"
           
           curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
