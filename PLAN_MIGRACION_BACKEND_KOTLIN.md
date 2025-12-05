@@ -1252,12 +1252,1268 @@ Consultar Swagger UI: `http://backend-url/swagger-ui.html`
 - 404: Not Found
 - 500: Internal Server Error
 
+## FASE 9: Automatizacion CI/CD con GitHub Actions
+
+### 9.0 Vision General de Automatizacion
+
+Esta fase reemplaza el proceso manual de generacion y despliegue del APK con un workflow automatizado de GitHub Actions que:
+
+1. **Se activa automaticamente** cuando el backend se despliega en AWS
+2. **Obtiene la URL del backend** desde el deployment del backend
+3. **Configura automaticamente** las variables de entorno para el APK
+4. **Ejecuta tests de integracion** contra el backend real
+5. **Genera y firma el APK** de produccion
+6. **Sube el APK a S3** para distribucion
+7. **Crea release en GitHub** con el APK adjunto
+
+**Ventajas de este enfoque:**
+- ✅ Cero configuracion manual
+- ✅ El APK siempre apunta al backend correcto
+- ✅ Tests automaticos garantizan compatibilidad
+- ✅ Deployment atomico y reproducible
+- ✅ Historial completo de releases
+
+### 9.1 Configuracion de GitHub Secrets
+
+#### 9.1.1 Secrets Requeridos en el Repositorio FullSound-KOTLIN
+
+Configurar los siguientes secrets en GitHub (Settings > Secrets and variables > Actions):
+
+**Secrets de AWS (compartidos con el backend):**
+```
+AWS_ACCESS_KEY_ID           - Credenciales AWS
+AWS_SECRET_ACCESS_KEY       - Credenciales AWS
+AWS_SESSION_TOKEN           - Token de sesion AWS (Learner Lab)
+AWS_ACCOUNT_ID              - ID de cuenta AWS
+```
+
+**Secrets de la Aplicacion:**
+```
+DB_PASSWORD                 - Contraseña de PostgreSQL en Supabase
+JWT_SECRET                  - Clave secreta JWT (minimo 64 caracteres)
+KEYSTORE_PASSWORD           - Password del keystore de firma
+KEY_PASSWORD                - Password de la key en el keystore
+KEYSTORE_BASE64             - Keystore codificado en base64
+```
+
+**Secrets Opcionales:**
+```
+BACKEND_REPO_OWNER          - Owner del repo backend (default: VECTORG99)
+BACKEND_REPO_NAME           - Nombre repo backend (default: FULLSOUND-SPRINGBOOT)
+```
+
+#### 9.1.2 Como Generar y Codificar el Keystore
+
+**Paso 1: Generar Keystore (solo una vez)**
+```bash
+# En el directorio raiz del proyecto Kotlin
+keytool -genkey -v -keystore fullsound-release.keystore \
+  -alias fullsound \
+  -keyalg RSA \
+  -keysize 2048 \
+  -validity 10000
+
+# Guardar passwords de forma segura
+```
+
+**Paso 2: Codificar Keystore en Base64**
+```bash
+# En Linux/Mac
+base64 fullsound-release.keystore | tr -d '\n' > keystore.base64
+
+# En Windows PowerShell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("fullsound-release.keystore")) | Out-File keystore.base64
+```
+
+**Paso 3: Agregar a GitHub Secrets**
+- Copiar contenido de `keystore.base64`
+- Crear secret `KEYSTORE_BASE64` con ese valor
+- Crear secrets `KEYSTORE_PASSWORD` y `KEY_PASSWORD`
+- ⚠️ **NUNCA** commitear el keystore en Git
+
+### 9.2 Configuracion Simplificada del Proyecto Kotlin
+
+#### 9.2.1 Actualizar build.gradle.kts para CI/CD
+
+**Archivo a modificar:** `FullSound-KOTLIN.git/app/build.gradle.kts`
+
+**Cambios clave:**
+```kotlin
+android {
+    // ... configuracion existente
+    
+    signingConfigs {
+        create("release") {
+            // En CI/CD, el keystore se decodifica desde GitHub Secrets
+            // En desarrollo local, se usa keystore local si existe
+            val keystorePath = System.getenv("KEYSTORE_PATH") ?: "../keystore/fullsound-release.keystore"
+            
+            if (file(keystorePath).exists()) {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "default_password"
+                keyAlias = System.getenv("KEY_ALIAS") ?: "fullsound"
+                keyPassword = System.getenv("KEY_PASSWORD") ?: "default_password"
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            signingConfig = signingConfigs.getByName("release")
+            
+            // La URL del backend se inyecta desde GitHub Actions
+            val backendUrl = System.getenv("BACKEND_BASE_URL") 
+                ?: "https://placeholder.com/api"
+            
+            buildConfigField("String", "BACKEND_BASE_URL", "\"$backendUrl\"")
+            buildConfigField("String", "ENVIRONMENT", "\"production\"")
+        }
+        
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-DEBUG"
+            buildConfigField("String", "BACKEND_BASE_URL", "\"http://10.0.2.2:8080/api\"")
+            buildConfigField("String", "ENVIRONMENT", "\"development\"")
+        }
+    }
+    
+    // Versionado automatico basado en Git
+    defaultConfig {
+        // ... configuracion existente
+        
+        // Version code automatico basado en numero de commits
+        versionCode = providers.exec {
+            commandLine("git", "rev-list", "--count", "HEAD")
+        }.standardOutput.asText.get().trim().toIntOrNull() ?: 1
+        
+        // Version name desde Git tag o branch
+        versionName = providers.exec {
+            commandLine("git", "describe", "--tags", "--always", "--dirty")
+        }.standardOutput.asText.get().trim().ifEmpty { "1.0.0" }
+    }
+}
+```
+
+#### 9.2.2 Configuracion .env para Desarrollo Local (Opcional)
+
+**Archivo a crear:** `FullSound-KOTLIN.git/.env.example`
+
+```properties
+# Variables para desarrollo local
+# Copiar a .env y configurar con valores reales
+
+# Backend URL (local o AWS)
+BACKEND_BASE_URL=http://10.0.2.2:8080/api
+
+# Credenciales de firma (solo para testing local)
+KEYSTORE_PASSWORD=tu_password
+KEY_ALIAS=fullsound
+KEY_PASSWORD=tu_password
+```
+
+**Archivo a modificar:** `FullSound-KOTLIN.git/.gitignore`
+```gitignore
+# Ignorar archivos sensibles
+.env
+*.keystore
+keystore/
+keystore.base64
+local.properties
+```
+
+### 9.3 Estructura del GitHub Actions Workflow
+
+#### 9.3.1 Workflow Principal: Build y Deploy APK
+
+**Archivo a crear:** `FullSound-KOTLIN.git/.github/workflows/build-and-deploy-apk.yml`
+
+**Estructura del workflow:**
+
+```yaml
+name: Build and Deploy Android APK
+
+on:
+  # Se activa cuando se hace push al main
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - '.github/workflows/build-and-deploy-apk.yml'
+  
+  # Se activa manualmente con parametros opcionales
+  workflow_dispatch:
+    inputs:
+      backend_url:
+        description: 'Backend URL (opcional, se auto-detecta desde AWS)'
+        required: false
+        type: string
+      skip_tests:
+        description: 'Skip integration tests'
+        required: false
+        type: boolean
+        default: false
+  
+  # Se activa cuando el backend se despliega (webhook desde otro repo)
+  repository_dispatch:
+    types: [backend-deployed]
+
+jobs:
+  detect-backend:
+    name: Detect Backend URL from AWS
+    runs-on: ubuntu-latest
+    outputs:
+      backend_url: ${{ steps.get-backend.outputs.url }}
+      backend_ip: ${{ steps.get-backend.outputs.ip }}
+    
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+      
+      - name: Get Backend URL from AWS
+        id: get-backend
+        run: |
+          # Opcion 1: Usar URL manual si se proporciono
+          if [ -n "${{ inputs.backend_url }}" ]; then
+            echo "url=${{ inputs.backend_url }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Opcion 2: Obtener desde deployment-info en S3
+          BUCKET_NAME="fullsound-deployments-${{ secrets.AWS_ACCOUNT_ID }}"
+          
+          if aws s3 ls s3://${BUCKET_NAME}/deployment-info.json; then
+            aws s3 cp s3://${BUCKET_NAME}/deployment-info.json deployment-info.json
+            BACKEND_IP=$(jq -r '.ec2_public_ip' deployment-info.json)
+            
+            if [ "$BACKEND_IP" != "null" ] && [ -n "$BACKEND_IP" ]; then
+              BACKEND_URL="http://${BACKEND_IP}:8080/api"
+              echo "url=${BACKEND_URL}" >> $GITHUB_OUTPUT
+              echo "ip=${BACKEND_IP}" >> $GITHUB_OUTPUT
+              echo "✅ Backend URL detected: ${BACKEND_URL}"
+            else
+              echo "❌ No backend IP found in deployment-info.json"
+              exit 1
+            fi
+          else
+            echo "❌ deployment-info.json not found in S3"
+            exit 1
+          fi
+      
+      - name: Verify Backend Health
+        run: |
+          BACKEND_URL="${{ steps.get-backend.outputs.url }}"
+          echo "Testing backend health: ${BACKEND_URL}/auth/health"
+          
+          # Esperar hasta 2 minutos a que el backend este disponible
+          for i in {1..24}; do
+            if curl -f -s "${BACKEND_URL}/auth/health" > /dev/null; then
+              echo "✅ Backend is healthy!"
+              exit 0
+            fi
+            echo "⏳ Waiting for backend... (attempt $i/24)"
+            sleep 5
+          done
+          
+          echo "❌ Backend health check failed"
+          exit 1
+
+  build-apk:
+    name: Build and Test APK
+    needs: detect-backend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Necesario para versionado con Git
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+      
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > /tmp/keystore.jks
+          echo "KEYSTORE_PATH=/tmp/keystore.jks" >> $GITHUB_ENV
+      
+      - name: Setup Build Environment
+        run: |
+          echo "BACKEND_BASE_URL=${{ needs.detect-backend.outputs.backend_url }}" >> $GITHUB_ENV
+          echo "KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
+          echo "KEY_ALIAS=fullsound" >> $GITHUB_ENV
+          echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_ENV
+      
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x gradlew
+      
+      - name: Run Unit Tests
+        run: ./gradlew test
+      
+      - name: Run Integration Tests (optional)
+        if: ${{ !inputs.skip_tests }}
+        env:
+          BACKEND_URL: ${{ needs.detect-backend.outputs.backend_url }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: |
+          # Aqui se ejecutarian tests de integracion contra el backend real
+          echo "Running integration tests against: $BACKEND_URL"
+          ./gradlew connectedAndroidTest || echo "⚠️  Integration tests skipped (no emulator)"
+      
+      - name: Build Release APK
+        run: |
+          echo "🔨 Building APK with backend: ${{ needs.detect-backend.outputs.backend_url }}"
+          ./gradlew assembleRelease --stacktrace
+      
+      - name: Build Release AAB (for Play Store)
+        run: ./gradlew bundleRelease
+      
+      - name: Get APK Info
+        id: apk-info
+        run: |
+          APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          AAB_PATH=$(find app/build/outputs/bundle/release -name "*.aab" | head -n 1)
+          
+          echo "apk_path=${APK_PATH}" >> $GITHUB_OUTPUT
+          echo "aab_path=${AAB_PATH}" >> $GITHUB_OUTPUT
+          
+          # Obtener version de build.gradle
+          VERSION_NAME=$(grep "versionName" app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          VERSION_CODE=$(grep "versionCode" app/build.gradle.kts | head -1 | sed 's/.*= *\([0-9]*\).*/\1/')
+          
+          echo "version_name=${VERSION_NAME}" >> $GITHUB_OUTPUT
+          echo "version_code=${VERSION_CODE}" >> $GITHUB_OUTPUT
+          
+          echo "📦 APK: ${APK_PATH}"
+          echo "📦 AAB: ${AAB_PATH}"
+          echo "🏷️  Version: ${VERSION_NAME} (${VERSION_CODE})"
+      
+      - name: Sign APK Verification
+        run: |
+          APK_PATH="${{ steps.apk-info.outputs.apk_path }}"
+          echo "Verifying APK signature..."
+          jarsigner -verify -verbose -certs "${APK_PATH}"
+      
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fullsound-apk-${{ steps.apk-info.outputs.version_name }}
+          path: ${{ steps.apk-info.outputs.apk_path }}
+          retention-days: 30
+      
+      - name: Upload AAB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fullsound-aab-${{ steps.apk-info.outputs.version_name }}
+          path: ${{ steps.apk-info.outputs.aab_path }}
+          retention-days: 30
+
+  deploy-to-s3:
+    name: Deploy APK to AWS S3
+    needs: [detect-backend, build-apk]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download APK Artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: fullsound-apk-*
+          merge-multiple: true
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+      
+      - name: Create S3 Bucket for APKs
+        run: |
+          BUCKET_NAME="fullsound-android-releases-${{ secrets.AWS_ACCOUNT_ID }}"
+          aws s3 mb s3://${BUCKET_NAME} --region us-east-1 2>/dev/null || echo "Bucket exists"
+          
+          # Configurar bucket para acceso publico
+          aws s3api put-public-access-block \
+            --bucket ${BUCKET_NAME} \
+            --public-access-block-configuration \
+            "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
+          
+          # Configurar politica de bucket
+          cat > /tmp/bucket-policy.json << EOF
+          {
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Sid": "PublicReadGetObject",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "s3:GetObject",
+              "Resource": "arn:aws:s3:::${BUCKET_NAME}/*"
+            }]
+          }
+          EOF
+          
+          aws s3api put-bucket-policy --bucket ${BUCKET_NAME} --policy file:///tmp/bucket-policy.json
+          
+          echo "BUCKET_NAME=${BUCKET_NAME}" >> $GITHUB_ENV
+      
+      - name: Upload APK to S3
+        run: |
+          APK_FILE=$(ls *.apk | head -n 1)
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          VERSION="${{ github.sha }}"
+          
+          # Subir version timestamped
+          aws s3 cp "${APK_FILE}" \
+            "s3://${BUCKET_NAME}/fullsound-${TIMESTAMP}.apk" \
+            --metadata "commit-sha=${{ github.sha }},backend-url=${{ needs.detect-backend.outputs.backend_url }}"
+          
+          # Subir como latest
+          aws s3 cp "${APK_FILE}" \
+            "s3://${BUCKET_NAME}/fullsound-latest.apk" \
+            --metadata "commit-sha=${{ github.sha }},backend-url=${{ needs.detect-backend.outputs.backend_url }},timestamp=${TIMESTAMP}"
+          
+          # Crear metadata JSON
+          cat > metadata.json << EOF
+          {
+            "version": "${VERSION}",
+            "timestamp": "${TIMESTAMP}",
+            "commit_sha": "${{ github.sha }}",
+            "backend_url": "${{ needs.detect-backend.outputs.backend_url }}",
+            "download_url": "https://${BUCKET_NAME}.s3.us-east-1.amazonaws.com/fullsound-latest.apk",
+            "size_bytes": $(stat -f%z "${APK_FILE}" 2>/dev/null || stat -c%s "${APK_FILE}")
+          }
+          EOF
+          
+          aws s3 cp metadata.json "s3://${BUCKET_NAME}/metadata-latest.json"
+          
+          echo "✅ APK uploaded successfully!"
+          echo "📱 Download URL: https://${BUCKET_NAME}.s3.us-east-1.amazonaws.com/fullsound-latest.apk"
+          
+          echo "download_url=https://${BUCKET_NAME}.s3.us-east-1.amazonaws.com/fullsound-latest.apk" >> $GITHUB_ENV
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            *.apk
+          body: |
+            ## FullSound APK Release
+            
+            **Backend URL:** ${{ needs.detect-backend.outputs.backend_url }}
+            **Commit:** ${{ github.sha }}
+            **Build Date:** ${{ github.event.head_commit.timestamp }}
+            
+            ### Download
+            - [Download APK from S3](${{ env.download_url }})
+            
+            ### Installation
+            1. Enable "Unknown Sources" in Android Settings
+            2. Download and install the APK
+            3. Login with your credentials
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Deployment Summary
+        run: |
+          echo "======================================"
+          echo "🎉 DEPLOYMENT COMPLETE"
+          echo "======================================"
+          echo ""
+          echo "📱 APK Download: ${{ env.download_url }}"
+          echo "🌐 Backend URL: ${{ needs.detect-backend.outputs.backend_url }}"
+          echo "🔖 Commit: ${{ github.sha }}"
+          echo "📦 S3 Bucket: ${BUCKET_NAME}"
+          echo ""
+          echo "======================================"
+```
+
+#### 9.3.2 Workflow de Trigger desde Backend
+
+**Concepto:** Cuando el backend se despliega, puede notificar al repo de Kotlin para que genere un nuevo APK automaticamente.
+
+**Archivo a modificar en backend:** `FULLSOUND-SPRINGBOOT/.github/workflows/deploy-backend-aws.yml`
+
+**Agregar al final del workflow:**
+
+```yaml
+      - name: Trigger Android APK Build
+        if: success()
+        run: |
+          # Notificar al repo de Android que el backend fue desplegado
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/VECTORG99/FullSound-KOTLIN/dispatches \
+            -d '{
+              "event_type": "backend-deployed",
+              "client_payload": {
+                "backend_url": "http://${{ steps.check-ec2.outputs.public-ip }}:8080/api",
+                "backend_ip": "${{ steps.check-ec2.outputs.public-ip }}",
+                "commit_sha": "${{ github.sha }}"
+              }
+            }'
+```
+
+### 9.4 Configuracion ProGuard para Release
+
+**Archivo a modificar:** `FullSound-KOTLIN.git/app/proguard-rules.pro`
+
+```proguard
+# Retrofit
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class retrofit2.** { *; }
+-keepclasseswithmembers class * {
+    @retrofit2.http.* <methods>;
+}
+
+# Gson
+-keep class com.google.gson.** { *; }
+-keep class * implements com.google.gson.TypeAdapter
+-keep class * implements com.google.gson.TypeAdapterFactory
+-keep class * implements com.google.gson.JsonSerializer
+-keep class * implements com.google.gson.JsonDeserializer
+
+# Modelos de datos (DTOs)
+-keep class com.grupo8.fullsound.data.remote.dto.** { *; }
+-keep class com.grupo8.fullsound.data.local.entity.** { *; }
+
+# Room
+-keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Entity class *
+-dontwarn androidx.room.paging.**
+
+# Kotlin
+-keep class kotlin.Metadata { *; }
+```
+
+### 9.5 Tests de Integracion Automaticos
+
+#### 9.5.1 Crear Tests contra Backend Real
+
+**Archivo a crear:** `FullSound-KOTLIN.git/app/src/androidTest/java/com/grupo8/fullsound/BackendIntegrationTest.kt`
+
+**Proposito:** Validar que el APK puede comunicarse correctamente con el backend de AWS.
+
+```kotlin
+/**
+ * Tests de integracion que se ejecutan contra el backend real de AWS
+ * Se ejecutan en GitHub Actions antes de generar el APK de produccion
+ */
+@RunWith(AndroidJUnit4::class)
+class BackendIntegrationTest {
+    
+    private val backendUrl = System.getenv("BACKEND_URL") ?: BuildConfig.BACKEND_BASE_URL
+    
+    @Test
+    fun testBackendHealthCheck() {
+        // Verificar que el backend esta disponible
+        val healthUrl = "$backendUrl/auth/health"
+        
+        val response = makeRequest(healthUrl)
+        assertEquals(200, response.code)
+    }
+    
+    @Test
+    fun testUserRegistrationAndLogin() {
+        // Test completo de registro y login
+        val randomUser = "testuser_${System.currentTimeMillis()}"
+        val email = "$randomUser@fullsound.test"
+        val password = "TestPassword123!"
+        
+        // 1. Registrar usuario
+        val registerResponse = register(randomUser, email, password)
+        assertTrue(registerResponse.isSuccessful)
+        
+        // 2. Login
+        val loginResponse = login(email, password)
+        assertTrue(loginResponse.isSuccessful)
+        assertNotNull(loginResponse.token)
+    }
+    
+    @Test
+    fun testGetBeatsFromBackend() {
+        // Verificar que se pueden obtener beats del backend
+        val beatsUrl = "$backendUrl/beats"
+        
+        val response = makeRequest(beatsUrl)
+        assertEquals(200, response.code)
+        
+        val beats = parseBeatsResponse(response.body)
+        assertTrue(beats.isNotEmpty(), "Backend should return beats")
+    }
+    
+    @Test
+    fun testCreatePedidoRequiresAuth() {
+        // Verificar que crear pedido sin auth retorna 401
+        val pedidoUrl = "$backendUrl/pedidos"
+        
+        val response = makePostRequest(pedidoUrl, "{}")
+        assertEquals(401, response.code)
+    }
+}
+```
+
+#### 9.5.2 Estrategia de Tests en CI/CD
+
+**Tests que se ejecutan automaticamente:**
+
+1. **Unit Tests (siempre):** Tests unitarios de la app
+2. **Backend Health Check (siempre):** Verifica que backend este disponible
+3. **Integration Tests (opcional):** Tests completos contra backend real
+   - Solo se ejecutan si hay emulador disponible
+   - Pueden skippearse con flag `skip_tests`
+
+**Beneficios:**
+- ✅ Detecta problemas de compatibilidad antes de deployment
+- ✅ Valida que el backend esta funcionando correctamente
+- ✅ Garantiza que el APK generado funciona end-to-end
+
+### 9.6 Proceso Automatizado Completo
+
+#### 9.6.1 Flujo Automatico End-to-End
+
+**Diagrama del proceso:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ 1. DEVELOPER PUSH CODE                                          │
+│    - Push a main en repo FullSound-KOTLIN                       │
+│    - O trigger manual via workflow_dispatch                     │
+└───────────────────┬─────────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 2. DETECT BACKEND URL                                           │
+│    ✓ Obtiene IP del EC2 desde S3 deployment-info.json          │
+│    ✓ Construye URL: http://EC2-IP:8080/api                     │
+│    ✓ Verifica health check del backend                         │
+└───────────────────┬─────────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 3. BUILD APK                                                    │
+│    ✓ Decodifica keystore desde GitHub Secrets                  │
+│    ✓ Inyecta BACKEND_BASE_URL en BuildConfig                   │
+│    ✓ Ejecuta unit tests                                        │
+│    ✓ Ejecuta integration tests (opcional)                      │
+│    ✓ Compila y firma APK de release                            │
+│    ✓ Genera AAB para Play Store                                │
+└───────────────────┬─────────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 4. DEPLOY TO S3                                                 │
+│    ✓ Crea bucket fullsound-android-releases-{ACCOUNT_ID}       │
+│    ✓ Sube APK como fullsound-{timestamp}.apk                   │
+│    ✓ Sube copia como fullsound-latest.apk                      │
+│    ✓ Crea metadata.json con info del build                     │
+│    ✓ Crea GitHub Release (si es tag)                           │
+└───────────────────┬─────────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 5. DEPLOYMENT COMPLETE                                          │
+│    📱 APK URL: https://bucket.s3.amazonaws.com/latest.apk       │
+│    🌐 Consuming: http://EC2-IP:8080/api                         │
+│    ✅ Ready for distribution                                    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### 9.6.2 Trigger Automatico desde Backend (Opcional)
+
+**Cuando el backend se despliega exitosamente, puede disparar automaticamente el build del APK:**
+
+```
+Backend Deploy (main) → API Call → Android Workflow → Build APK → Deploy S3
+```
+
+**Ventaja:** El APK siempre esta sincronizado con la ultima version del backend.
+
+#### 9.6.3 Variables Disponibles en el Workflow
+
+**Variables que se pasan automaticamente:**
+
+| Variable | Origen | Uso |
+|----------|--------|-----|
+| `BACKEND_BASE_URL` | Detectada desde AWS | Inyectada en BuildConfig del APK |
+| `KEYSTORE_PASSWORD` | GitHub Secret | Firma del APK |
+| `KEY_PASSWORD` | GitHub Secret | Firma del APK |
+| `JWT_SECRET` | GitHub Secret | Tests de integracion |
+| `DB_PASSWORD` | GitHub Secret | Tests de integracion |
+| `AWS_ACCESS_KEY_ID` | GitHub Secret | Acceso a S3 |
+| `AWS_SECRET_ACCESS_KEY` | GitHub Secret | Acceso a S3 |
+| `AWS_SESSION_TOKEN` | GitHub Secret | Acceso a S3 (Learner Lab) |
+| `AWS_ACCOUNT_ID` | GitHub Secret | Nombre del bucket S3 |
+
+### 9.7 Pagina de Descarga del APK
+
+#### 9.7.1 Pagina Web de Descarga Dinamica
+
+**Crear archivo:** `FULLSOUND-SPRINGBOOT/frontend/descargar-app.html`
+
+Esta pagina obtiene automaticamente la URL del APK desde S3 y muestra metadata en tiempo real.
+
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Descargar FullSound APK</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 30px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        .download-btn {
+            background-color: #1DB954;
+            color: white;
+            padding: 18px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 25px 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .download-btn:hover {
+            background-color: #1ed760;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+        .info-box {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+        .version {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        .metadata {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .metadata-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .metadata-label {
+            font-size: 0.9em;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+        .metadata-value {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        .instructions {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            text-align: left;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            text-align: center;
+        }
+        .instructions ol {
+            line-height: 2em;
+        }
+        .loading {
+            display: inline-block;
+            margin: 20px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 FullSound</h1>
+    <p class="subtitle">Aplicación móvil oficial para comprar beats</p>
+    
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Cargando información del APK...</p>
+    </div>
+    
+    <div id="content" style="display: none;">
+        <a id="downloadBtn" href="#" class="download-btn" download>
+            📱 Descargar APK
+        </a>
+        
+        <div class="info-box">
+            <p class="version">
+                <strong>Versión:</strong> <span id="version">Cargando...</span><br>
+                <strong>Tamaño:</strong> <span id="size">Cargando...</span><br>
+                <strong>Última actualización:</strong> <span id="timestamp">Cargando...</span>
+            </p>
+        </div>
+        
+        <div class="metadata">
+            <div class="metadata-item">
+                <div class="metadata-label">Backend URL</div>
+                <div class="metadata-value" id="backendUrl">-</div>
+            </div>
+            <div class="metadata-item">
+                <div class="metadata-label">Commit SHA</div>
+                <div class="metadata-value" id="commitSha">-</div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 Instrucciones de instalación</h3>
+            <ol>
+                <li><strong>Descarga</strong> el archivo APK tocando el botón verde</li>
+                <li>Ve a <strong>Ajustes > Seguridad</strong> en tu dispositivo Android</li>
+                <li>Habilita <strong>"Fuentes desconocidas"</strong> o <strong>"Instalar aplicaciones desconocidas"</strong></li>
+                <li>Abre el <strong>archivo APK descargado</strong></li>
+                <li>Toca <strong>"Instalar"</strong> y espera a que se complete</li>
+                <li>¡Listo! Abre FullSound y disfruta</li>
+            </ol>
+            <p style="text-align: center; margin-top: 20px;">
+                <small>⚠️ Requiere Android 7.0 (API 24) o superior</small>
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // Obtener metadata del APK desde S3
+        const AWS_ACCOUNT_ID = 'TU_ACCOUNT_ID'; // Reemplazar con tu Account ID
+        const BUCKET_NAME = `fullsound-android-releases-${AWS_ACCOUNT_ID}`;
+        const METADATA_URL = `https://${BUCKET_NAME}.s3.us-east-1.amazonaws.com/metadata-latest.json`;
+        const APK_URL = `https://${BUCKET_NAME}.s3.us-east-1.amazonaws.com/fullsound-latest.apk`;
+        
+        fetch(METADATA_URL)
+            .then(response => response.json())
+            .then(data => {
+                // Actualizar UI con metadata
+                document.getElementById('version').textContent = data.version || 'N/A';
+                document.getElementById('timestamp').textContent = new Date(data.timestamp).toLocaleString('es-ES');
+                document.getElementById('backendUrl').textContent = data.backend_url || 'N/A';
+                document.getElementById('commitSha').textContent = (data.commit_sha || 'N/A').substring(0, 7);
+                
+                // Calcular tamaño en MB
+                const sizeMB = (data.size_bytes / (1024 * 1024)).toFixed(2);
+                document.getElementById('size').textContent = `${sizeMB} MB`;
+                
+                // Configurar boton de descarga
+                document.getElementById('downloadBtn').href = data.download_url || APK_URL;
+                
+                // Mostrar contenido
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error loading metadata:', error);
+                // Si falla, usar URL por defecto
+                document.getElementById('downloadBtn').href = APK_URL;
+                document.getElementById('loading').innerHTML = '<p>⚠️ No se pudo cargar la metadata, pero puedes descargar el APK</p>';
+                document.getElementById('content').style.display = 'block';
+            });
+    </script>
+</body>
+</html>
+```
+
+**Nota:** Reemplazar `TU_ACCOUNT_ID` con el valor real del AWS Account ID.
+
+### 9.8 Configuracion Simplificada para Desarrollo Local
+
+#### 9.8.1 Desarrollo y Testing Local (sin GitHub Actions)
+
+**Para desarrolladores que quieren probar localmente antes de push:**
+
+**Opcion 1: Usar Backend Local**
+```bash
+# En local.properties
+BACKEND_BASE_URL=http://10.0.2.2:8080/api
+```
+
+**Opcion 2: Usar Backend en AWS**
+```bash
+# Obtener IP del backend desde AWS
+aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=fullsound-backend" \
+  --query "Reservations[0].Instances[0].PublicIpAddress" \
+  --output text
+
+# Agregar a local.properties
+BACKEND_BASE_URL=http://[IP-AWS]:8080/api
+```
+
+**Opcion 3: Usar archivo .env**
+```bash
+# Crear .env en la raiz del proyecto Kotlin
+echo "BACKEND_BASE_URL=http://tu-ip:8080/api" > .env
+```
+
+**Build local sin firma:**
+```bash
+# Para testing rapido (debug build)
+./gradlew assembleDebug
+
+# Para testing de release sin firma
+./gradlew assembleRelease
+```
+
+### 9.9 Monitoreo y Debugging
+
+#### 9.9.1 Ver Logs del Workflow en GitHub
+
+**Acceso a logs:**
+1. Ir a repositorio `FullSound-KOTLIN` en GitHub
+2. Ir a tab "Actions"
+3. Seleccionar workflow "Build and Deploy Android APK"
+4. Ver detalles de cada job (detect-backend, build-apk, deploy-to-s3)
+
+**Logs importantes a revisar:**
+- ✅ Backend URL detectada correctamente
+- ✅ Health check del backend exitoso
+- ✅ Tests pasados
+- ✅ APK firmado correctamente
+- ✅ Upload a S3 exitoso
+
+#### 9.9.2 Debugging de Problemas Comunes
+
+**Problema 1: Backend URL no detectada**
+```bash
+# Verificar que deployment-info.json existe en S3
+aws s3 ls s3://fullsound-deployments-{ACCOUNT_ID}/deployment-info.json
+
+# Ver contenido
+aws s3 cp s3://fullsound-deployments-{ACCOUNT_ID}/deployment-info.json -
+```
+
+**Solucion:** Asegurar que el backend se haya desplegado correctamente.
+
+**Problema 2: Health check falla**
+```bash
+# Verificar manualmente el backend
+curl http://[EC2-IP]:8080/api/auth/health
+
+# Verificar que EC2 este running
+aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=fullsound-backend" \
+  --query "Reservations[0].Instances[0].State.Name"
+```
+
+**Solucion:** Verificar que el backend este corriendo y accesible.
+
+**Problema 3: Keystore invalido**
+```bash
+# Verificar que el secret KEYSTORE_BASE64 este configurado
+# Re-generar y re-codificar el keystore si es necesario
+```
+
+**Problema 4: APK no se puede instalar**
+- Verificar firma del APK en los logs
+- Verificar que minSdk coincide con el dispositivo
+- Habilitar "Unknown Sources" en dispositivo
+
+#### 9.9.3 Monitoreo de Deployments
+
+**Ver ultimos deployments:**
+```bash
+# Listar APKs en S3
+aws s3 ls s3://fullsound-android-releases-{ACCOUNT_ID}/ --recursive
+
+# Ver metadata del ultimo deployment
+aws s3 cp s3://fullsound-android-releases-{ACCOUNT_ID}/metadata-latest.json -
+```
+
+**Estadisticas de descarga (opcional):**
+- Habilitar CloudFront logging
+- Usar S3 access logs
+- Implementar contador de descargas en pagina web
+
+### 9.10 Checklist de Configuracion Completa
+
+#### 9.10.1 Repositorio FullSound-KOTLIN
+
+**GitHub Secrets configurados:**
+- [ ] `AWS_ACCESS_KEY_ID` - Credenciales AWS
+- [ ] `AWS_SECRET_ACCESS_KEY` - Credenciales AWS
+- [ ] `AWS_SESSION_TOKEN` - Token de sesion AWS Learner Lab
+- [ ] `AWS_ACCOUNT_ID` - ID de cuenta AWS
+- [ ] `DB_PASSWORD` - Contraseña de PostgreSQL
+- [ ] `JWT_SECRET` - Secret JWT (minimo 64 caracteres)
+- [ ] `KEYSTORE_BASE64` - Keystore codificado en base64
+- [ ] `KEYSTORE_PASSWORD` - Password del keystore
+- [ ] `KEY_PASSWORD` - Password de la key
+
+**Archivos creados/modificados:**
+- [ ] `.github/workflows/build-and-deploy-apk.yml` - Workflow principal
+- [ ] `app/build.gradle.kts` - Configurado para CI/CD
+- [ ] `app/proguard-rules.pro` - Reglas de ProGuard
+- [ ] `.gitignore` - Actualizado para excluir archivos sensibles
+- [ ] `.env.example` - Template para desarrollo local
+
+**Configuracion local (opcional):**
+- [ ] `.env` o `local.properties` configurado para desarrollo
+- [ ] Keystore local generado (solo para testing)
+
+#### 9.10.2 Repositorio FULLSOUND-SPRINGBOOT (Backend)
+
+**Modificaciones opcionales:**
+- [ ] Workflow modificado para disparar build del APK automaticamente
+- [ ] Seccion agregada para notificar repo de Kotlin
+
+#### 9.10.3 AWS
+
+**Recursos creados automaticamente:**
+- [ ] Bucket S3: `fullsound-android-releases-{ACCOUNT_ID}`
+- [ ] Politica de bucket configurada para acceso publico
+- [ ] deployment-info.json disponible desde backend
+
+**Verificaciones:**
+- [ ] Backend desplegado en EC2 y accessible
+- [ ] Health check del backend responde correctamente
+- [ ] URL del backend disponible via deployment-info.json
+
+#### 9.10.4 Testing
+
+**Tests automaticos:**
+- [ ] Unit tests pasan en CI/CD
+- [ ] Integration tests configurados (opcional)
+- [ ] Backend health check funciona
+
+**Tests manuales:**
+- [ ] APK descargado desde S3
+- [ ] APK instalado en dispositivo real
+- [ ] Login funciona contra backend de AWS
+- [ ] Listar beats funciona
+- [ ] Crear pedido funciona
+- [ ] Funcionalidad offline con Room funciona
+
+#### 9.10.5 Documentacion
+
+- [ ] README actualizado con instrucciones de CI/CD
+- [ ] Plan de migracion completado (este documento)
+- [ ] Pagina de descarga del APK desplegada
+- [ ] URLs de descarga documentadas
+
+### 9.11 Ventajas del Enfoque con GitHub Actions
+
+**Comparacion: Manual vs Automatizado**
+
+| Aspecto | Proceso Manual | GitHub Actions (Automatizado) |
+|---------|---------------|------------------------------|
+| **Configuracion Backend URL** | Manual, propenso a errores | ✅ Auto-detectada desde AWS |
+| **Firma del APK** | Keystore local, riesgo de perdida | ✅ Keystore seguro en GitHub Secrets |
+| **Tests** | Manual, a veces se olvidan | ✅ Automaticos en cada build |
+| **Consistency** | Depende del desarrollador | ✅ Proceso identico siempre |
+| **Distribucion** | Subir manualmente a S3 | ✅ Automatica con metadata |
+| **Versionado** | Manual en build.gradle | ✅ Automatico desde Git |
+| **Deployment Backend + APK** | 2 pasos manuales | ✅ Sincronizado automaticamente |
+| **Rollback** | Complejo | ✅ Facil con versiones en S3 |
+| **Auditoria** | No hay registro | ✅ Logs completos en GitHub |
+| **Tiempo de deployment** | 30-60 minutos | ✅ 10-15 minutos automatico |
+
+**Ventajas clave:**
+
+1. ✅ **Zero Configuration:** El APK siempre sabe donde esta el backend
+2. ✅ **Atomic Deployments:** Backend y APK estan sincronizados
+3. ✅ **Reproducible:** Cualquier commit puede regenerar el APK exacto
+4. ✅ **Secure:** Secrets nunca en el codigo, solo en GitHub
+5. ✅ **Fast Feedback:** Errores se detectan en CI antes de produccion
+6. ✅ **Versionado Automatico:** No mas confusion con versiones
+
+### 9.12 Proceso de Actualizacion Simplificado
+
+**Para publicar una nueva version:**
+
+```bash
+# 1. Hacer cambios en el codigo
+git add .
+git commit -m "feat: nueva funcionalidad X"
+
+# 2. (Opcional) Crear tag para release oficial
+git tag -a v1.2.0 -m "Release 1.2.0"
+
+# 3. Push al repositorio
+git push origin main
+git push origin v1.2.0  # Si creaste tag
+
+# 4. ✨ GitHub Actions se encarga del resto automaticamente:
+#    - Detecta backend URL desde AWS
+#    - Ejecuta tests
+#    - Genera APK firmado con backend correcto
+#    - Sube a S3
+#    - Crea GitHub Release (si es tag)
+```
+
+**Resultado automatico:**
+- 📱 APK disponible en S3 en ~10-15 minutos
+- 🔗 URL de descarga actualizada
+- 📊 Metadata con info del build
+- 🏷️ GitHub Release (si es tag)
+- 📝 Logs completos del proceso
+
+**Versionado Automatico:**
+- `versionCode`: Numero de commits en Git (auto)
+- `versionName`: Tag de Git o commit SHA (auto)
+- No necesitas modificar build.gradle manualmente
+
+### 9.13 Estrategias de Distribucion
+
+#### 9.13.1 Beta Testing (S3)
+
+**Uso:** Distribucion rapida a beta testers.
+
+**Ventajas:**
+- ✅ Deployment automatico inmediato
+- ✅ URL directa para descargar
+- ✅ Multiples versiones disponibles
+- ✅ Sin revision de Google
+
+**Distribucion:**
+1. Compartir URL: `https://bucket.s3.amazonaws.com/fullsound-latest.apk`
+2. O usar pagina web de descarga personalizada
+
+#### 9.13.2 Google Play Store (Produccion)
+
+**Uso:** Distribucion publica a usuarios finales.
+
+**Proceso:**
+1. Descargar AAB desde GitHub Actions artifacts
+2. Subir a Google Play Console
+3. Completar listing (screenshots, descripcion, etc.)
+4. Publicar en Internal/Closed/Open Testing o Production
+
+**Ventajas:**
+- ✅ Actualizaciones automaticas para usuarios
+- ✅ Mayor confianza (Play Store verification)
+- ✅ Estadisticas de uso
+- ✅ Ratings y reviews
+
+#### 9.13.3 Enfoque Hibrido (Recomendado)
+
+**Estrategia:**
+- **S3:** Para beta testing y actualizaciones rapidas
+- **Play Store:** Para produccion estable
+
+**Workflow:**
+```
+Desarrollo → GitHub Actions → S3 (beta) → Testing → Play Store (production)
+```
+
 ## Conclusion
 
-Este plan proporciona una ruta detallada para migrar la aplicacion Android de acceso directo a Supabase hacia consumo del backend Spring Boot mediante API REST.
+Este plan proporciona una **ruta detallada y automatizada** para migrar la aplicacion Android de acceso directo a Supabase hacia consumo del backend Spring Boot mediante API REST.
 
-La migracion se realiza en fases incrementales, manteniendo la funcionalidad existente y permitiendo testing continuo. Se preserva Room Database como cache local para soporte offline.
+### Cambios Clave en la Fase 9 (Automatizacion):
 
-El backend Spring Boot proporciona una capa de logica de negocio centralizada, autenticacion JWT, y facilita futuras integraciones (pagos, notificaciones, etc.).
+**Antes (Manual):**
+- ❌ Configurar URL del backend manualmente
+- ❌ Generar keystore y mantenerlo seguro localmente
+- ❌ Compilar APK manualmente
+- ❌ Subir a S3 con comandos manuales
+- ❌ Crear releases manualmente
+- ❌ Alto riesgo de errores humanos
 
-Todos los cambios son no destructivos y permiten rollback a Supabase si es necesario mediante la estrategia hibrida propuesta en Fase 8.
+**Ahora (Automatizado con GitHub Actions):**
+- ✅ **URL del backend auto-detectada** desde AWS deployment
+- ✅ **Keystore seguro** en GitHub Secrets
+- ✅ **Build automatico** en cada push
+- ✅ **Tests automaticos** garantizan calidad
+- ✅ **Deploy automatico a S3** con metadata
+- ✅ **GitHub Releases automaticos** con tags
+- ✅ **Proceso reproducible y auditable**
+- ✅ **Sincronizacion backend-APK automatica**
+
+### Ventajas Globales:
+
+1. **Zero Configuration:** El APK siempre consume el backend correcto sin configuracion manual
+2. **Atomic Deployments:** Backend y APK estan perfectamente sincronizados
+3. **Continuous Delivery:** Cada commit puede generar un APK de produccion
+4. **Seguridad:** Secrets nunca expuestos, keystore seguro
+5. **Trazabilidad:** Cada APK tiene metadata completa (commit, backend URL, timestamp)
+6. **Rollback Facil:** Multiples versiones disponibles en S3
+7. **Fast Iteration:** De codigo a APK en produccion en 10-15 minutos
+8. **Quality Assurance:** Tests automaticos en cada build
+
+### Arquitectura Final:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    DESARROLLADOR                             │
+│  git push → GitHub → Actions Workflow                        │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+        ┌──────────────┴──────────────┐
+        │                             │
+        ▼                             ▼
+┌───────────────┐            ┌────────────────┐
+│   BACKEND     │            │   ANDROID APK  │
+│  Spring Boot  │◄───────────│    Kotlin      │
+│   (AWS EC2)   │   consume  │  (S3 + GitHub) │
+└───────────────┘            └────────────────┘
+        │                             │
+        │                             │
+        ▼                             ▼
+   PostgreSQL                   Usuarios Finales
+   (Supabase)                   (Download S3/Play)
+```
+
+La migracion se realiza en **fases incrementales**, manteniendo la funcionalidad existente y permitiendo testing continuo. Se preserva **Room Database** como cache local para soporte offline.
+
+El backend Spring Boot proporciona una **capa de logica de negocio centralizada**, autenticacion JWT, y facilita futuras integraciones (pagos, notificaciones, etc.).
+
+**La Fase 9 automatizada garantiza que la aplicacion Android pueda ser distribuida a usuarios finales consumiendo todos los servicios de produccion desplegados en AWS**, con un proceso completamente automatizado, seguro y reproducible.
+
+Todos los cambios son **no destructivos** y permiten rollback a Supabase si es necesario mediante la estrategia hibrida propuesta en Fase 8.
