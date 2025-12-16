@@ -48,24 +48,41 @@ public class UploadController {
                 return ResponseEntity.badRequest().body(Map.of("error", "El archivo está vacío"));
             }
 
-            // Generar nombre único para el archivo
-            String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename != null && originalFilename.contains(".") 
-                ? originalFilename.substring(originalFilename.lastIndexOf(".")) 
-                : "";
-            String filename = UUID.randomUUID().toString() + extension;
+            // Validar tamaño (max 50MB)
+            if (file.getSize() > 50 * 1024 * 1024) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El archivo es demasiado grande (máx 50MB)"));
+            }
 
-            // Construir URL de Supabase Storage
+            // Generar nombre único para el archivo manteniendo el nombre original
+            String originalFilename = file.getOriginalFilename();
+            String extension = "";
+            String baseName = "file";
+            
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+                baseName = originalFilename.substring(0, originalFilename.lastIndexOf("."))
+                    .replaceAll("[^a-zA-Z0-9-_]", "_");
+            }
+            
+            String filename = baseName + "_" + System.currentTimeMillis() + extension;
+
+            // Construir URL de Supabase Storage - usar service_role key para escribir
             String url = supabaseUrl + "/storage/v1/object/" + bucket + "/" + filename;
 
             // Crear cliente HTTP
             HttpClient client = HttpClient.newHttpClient();
             
+            // Usar service role key si está disponible, sino usar anon key
+            String authKey = System.getenv("SUPABASE_SERVICE_KEY") != null 
+                ? System.getenv("SUPABASE_SERVICE_KEY") 
+                : supabaseKey;
+            
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .header("Authorization", "Bearer " + supabaseKey)
-                .header("Content-Type", file.getContentType())
-                .header("apikey", supabaseKey)
+                .header("Authorization", "Bearer " + authKey)
+                .header("apikey", authKey)
+                .header("Content-Type", file.getContentType() != null ? file.getContentType() : "application/octet-stream")
+                .header("x-upsert", "true")
                 .POST(HttpRequest.BodyPublishers.ofByteArray(file.getBytes()))
                 .build();
 
@@ -75,18 +92,30 @@ public class UploadController {
                 // URL pública del archivo
                 String publicUrl = supabaseUrl + "/storage/v1/object/public/" + bucket + "/" + filename;
                 
-                Map<String, String> result = new HashMap<>();
+                Map<String, Object> result = new HashMap<>();
                 result.put("url", publicUrl);
                 result.put("filename", filename);
                 result.put("bucket", bucket);
+                result.put("size", file.getSize());
                 
                 return ResponseEntity.ok(result);
             } else {
-                return ResponseEntity.status(response.statusCode())
-                    .body(Map.of("error", "Error al subir archivo a Supabase: " + response.body()));
+                // Log detallado del error
+                System.err.println("Supabase upload error - Status: " + response.statusCode());
+                System.err.println("Response body: " + response.body());
+                
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Error al subir archivo a Supabase");
+                error.put("status", response.statusCode());
+                error.put("details", response.body());
+                error.put("bucket", bucket);
+                error.put("filename", filename);
+                
+                return ResponseEntity.status(response.statusCode()).body(error);
             }
 
         } catch (IOException e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Error al leer el archivo: " + e.getMessage()));
         } catch (InterruptedException e) {
@@ -94,8 +123,9 @@ public class UploadController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Proceso interrumpido: " + e.getMessage()));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Error inesperado: " + e.getMessage()));
+                .body(Map.of("error", "Error inesperado: " + e.getMessage(), "type", e.getClass().getName()));
         }
     }
 }
