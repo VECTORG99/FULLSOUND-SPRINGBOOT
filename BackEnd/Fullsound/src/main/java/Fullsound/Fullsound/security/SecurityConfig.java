@@ -53,6 +53,7 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api-docs/**", "/api-docs").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/beats/**").permitAll()
+                .requestMatchers("/carrito", "/carrito/**", "/api/carrito/**").permitAll()
                 .requestMatchers("/", "/index.html", "/static/**", "/assets/**", "/*.js", "/*.css", "/*.ico", "/*.png").permitAll()
                 .anyRequest().authenticated()
             );
