@@ -19,6 +19,7 @@ public class BeatResponse {
     private String tonalidad;
     private Integer duracion;  
     private String genero;  
+    private String emocion;
     private String etiquetas;  
     private String descripcion;
     private String imagenUrl;

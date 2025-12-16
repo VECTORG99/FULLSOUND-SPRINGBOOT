@@ -31,6 +31,10 @@ public class Beat {
     private Integer duracion;  
     @Column(name = "genero", length = 50)
     private String genero;
+    
+    @Column(name = "emocion", length = 50)
+    private String emocion;
+    
     @Column(name = "etiquetas", columnDefinition = "TEXT")
     private String etiquetas;  
     @Column(name = "descripcion", columnDefinition = "TEXT")
@@ -63,6 +67,6 @@ public class Beat {
     }
     @Override
     public String toString() {
-        return "Beat{id=" + id + ", titulo='" + titulo + "', precio=" + precio + ", genero='" + genero + "', estado=" + estado + "}";
+        return "Beat{id=" + id + ", titulo='" + titulo + "', precio=" + precio + ", genero='" + genero + "', emocion='" + emocion + "', estado=" + estado + "}";
     }
 }

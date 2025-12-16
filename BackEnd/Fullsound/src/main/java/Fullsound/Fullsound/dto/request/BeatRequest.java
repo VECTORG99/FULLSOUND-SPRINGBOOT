@@ -25,7 +25,11 @@ public class BeatRequest {
     @Min(value = 1, message = "La duración debe ser al menos 1 segundo")
     private Integer duracion;  
     @Size(max = 50, message = "El género no puede exceder 50 caracteres")
-    private String genero;  
+    private String genero;
+    
+    @Size(max = 50, message = "La emoción no puede exceder 50 caracteres")
+    private String emocion;
+    
     private String etiquetas;  
     private String descripcion;  
     @Size(max = 500, message = "La URL de la imagen no puede exceder 500 caracteres")

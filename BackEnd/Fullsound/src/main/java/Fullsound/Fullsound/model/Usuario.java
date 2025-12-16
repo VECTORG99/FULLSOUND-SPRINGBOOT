@@ -2,6 +2,7 @@ package Fullsound.Fullsound.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 @Entity
 @Table(name = "usuario")
@@ -16,6 +17,10 @@ public class Usuario {
     private Integer id;
     @Column(name = "nombre_usuario", nullable = false, unique = true, length = 50)
     private String nombreUsuario;
+    
+    @Column(name = "rut", length = 12)
+    private String rut;
+    
     @Column(name = "correo", nullable = false, unique = true, length = 100)
     private String correo;
     @Column(name = "contraseña", nullable = false, length = 255)
@@ -26,8 +31,11 @@ public class Usuario {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-    @Column(name = "updated_at", nullable = false, updatable = true)
+    
+    @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+    
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_rol", nullable = false)
     private Rol rol;

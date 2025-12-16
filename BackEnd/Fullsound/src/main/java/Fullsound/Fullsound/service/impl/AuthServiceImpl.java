@@ -45,6 +45,7 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new BadRequestException("Rol '" + tipoRol + "' no encontrado"));
         Usuario usuario = Usuario.builder()
                 .nombreUsuario(request.getNombreUsuario())
+                .rut(request.getRut())
                 .correo(request.getCorreo())
                 .nombre(request.getNombre())
                 .apellido(request.getApellido())
