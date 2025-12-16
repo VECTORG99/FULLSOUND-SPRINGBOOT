@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000", "http://localhost:4200", "http://localhost:8080"})
+@CrossOrigin(originPatterns = "*", allowedHeaders = "*")
 @Tag(name = "🔐 Autenticación", description = "Endpoints para registro, login y gestión de autenticación JWT")
 public class AuthController {
     private final AuthService authService;

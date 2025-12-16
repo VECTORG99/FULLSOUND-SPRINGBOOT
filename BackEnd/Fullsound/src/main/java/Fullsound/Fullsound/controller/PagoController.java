@@ -10,7 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/pagos")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000", "http://localhost:4200", "http://localhost:8080"})
+@CrossOrigin(originPatterns = "*", allowedHeaders = "*")
 public class PagoController {
     private final PagoService pagoService;
     @PostMapping("/create-intent")
