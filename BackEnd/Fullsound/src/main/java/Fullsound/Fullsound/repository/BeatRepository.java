@@ -31,8 +31,26 @@ public interface BeatRepository extends JpaRepository<Beat, Integer> {
            "(LOWER(b.titulo) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(b.artista) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(b.etiquetas) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-           "LOWER(b.genero) LIKE LOWER(CONCAT('%', :query, '%')))")
+           "LOWER(b.genero) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(b.descripcion) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<Beat> search(@Param("query") String query, Pageable pageable);
+
+    /**
+     * Busqueda full-text nativa de PostgreSQL usando tsvector/tsquery con
+     * ranking (ts_rank) y la columna generada search_vector. Solo funciona
+     * en PostgreSQL; en otros motores (H2) lanza una excepcion que el
+     * servicio captura para degradar a la busqueda LIKE.
+     */
+    @Query(value = "SELECT b.* FROM beat b " +
+                   "WHERE b.estado = 'DISPONIBLE' " +
+                   "AND b.search_vector @@ plainto_tsquery('spanish', :query) " +
+                   "ORDER BY ts_rank(b.search_vector, plainto_tsquery('spanish', :query)) DESC, " +
+                   "b.reproducciones DESC",
+           countQuery = "SELECT count(*) FROM beat b " +
+                   "WHERE b.estado = 'DISPONIBLE' " +
+                   "AND b.search_vector @@ plainto_tsquery('spanish', :query)",
+           nativeQuery = true)
+    Page<Beat> searchFullText(@Param("query") String query, Pageable pageable);
     @Query("SELECT b FROM Beat b WHERE b.estado = 'DISPONIBLE' ORDER BY b.reproducciones DESC LIMIT :limit")
     List<Beat> findTopByOrderByReproduccionesDesc(@Param("limit") int limit);
     @Query("SELECT b FROM Beat b WHERE b.estado = 'DISPONIBLE' ORDER BY b.createdAt DESC LIMIT :limit")

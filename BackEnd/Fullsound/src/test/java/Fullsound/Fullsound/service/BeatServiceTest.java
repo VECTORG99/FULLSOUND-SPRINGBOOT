@@ -5,6 +5,8 @@ import Fullsound.Fullsound.exception.ResourceNotFoundException;
 import Fullsound.Fullsound.mapper.BeatMapper;
 import Fullsound.Fullsound.model.Beat;
 import Fullsound.Fullsound.repository.BeatRepository;
+import Fullsound.Fullsound.repository.ReviewRepository;
+import Fullsound.Fullsound.repository.UsuarioFavoritoRepository;
 import Fullsound.Fullsound.service.impl.BeatServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +16,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.lenient;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +32,10 @@ class BeatServiceTest {
     private BeatRepository beatRepository;
     @Mock
     private BeatMapper beatMapper;
+    @Mock
+    private ReviewRepository reviewRepository;
+    @Mock
+    private UsuarioFavoritoRepository usuarioFavoritoRepository;
     @InjectMocks
     private BeatServiceImpl beatService;
     private Beat beat;
@@ -92,6 +100,11 @@ class BeatServiceTest {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
+        // Stubs lenient para el metodo enrich() (calificacion promedio, total
+        // de resenas y total de favoritos). Se usan solo en los tests de lectura.
+        lenient().when(reviewRepository.getAverageRatingForBeat(anyInt())).thenReturn(0.0);
+        lenient().when(reviewRepository.countByBeatId(anyInt())).thenReturn(0L);
+        lenient().when(usuarioFavoritoRepository.countByBeat(any(Beat.class))).thenReturn(0L);
     }
     @Nested
     @DisplayName("Create Beat Tests")

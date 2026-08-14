@@ -4,10 +4,12 @@ Backend REST API para marketplace de beats musicales.
 
 ## Stack Tecnológico
 
-- Java 17
-- Spring Boot 3.2.0
-- PostgreSQL (migrado desde MySQL)
+- Java 21
+- Spring Boot 3.4.1
+- PostgreSQL (con Flyway para migraciones)
 - Spring Security + JWT
+- WebSocket/STOMP (notificaciones en tiempo real)
+- Caffeine (caché en memoria)
 - Swagger/OpenAPI
 - MapStruct
 - Maven
@@ -15,7 +17,7 @@ Backend REST API para marketplace de beats musicales.
 ## Requisitos
 
 ```bash
-java -version    # Java 17+
+java -version    # Java 21+
 mvn -version     # Maven 3.8+
 psql --version   # PostgreSQL 12+
 ```
@@ -100,16 +102,22 @@ curl http://localhost:8080/api/beats \
 - GET `/check-email/{email}` - Verificar disponibilidad
 
 ### Beats - `/api/beats`
-- GET `/` - Listar beats (paginado)
-- GET `/{id}` - Obtener beat
+- GET `/` - Listar beats activos (paginado)
+- GET `/{id}` - Obtener beat (incluye `calificacionPromedio`, `totalResenas`, `totalFavoritos`)
 - GET `/slug/{slug}` - Obtener por slug
-- GET `/genero/{genero}` - Filtrar por género
-- GET `/destacados` - Beats destacados
-- POST `/` - Crear beat (Auth)
-- PUT `/{id}` - Actualizar beat (Propietario)
-- DELETE `/{id}` - Eliminar beat (Propietario)
-- POST `/{id}/like` - Dar like (Auth)
-- POST `/{id}/reproducir` - Incrementar reproducciones
+- GET `/featured` - Beats destacados
+- GET `/search?q={texto}` - **Buscar beats** por título, artista, género, etiquetas o descripción (paginado). Usa full-text PostgreSQL (`tsvector`) con ranking; degrada a `ILIKE`/`LIKE` si FTS no está disponible.
+- GET `/filter/price?min={min}&max={max}` - Filtrar por rango de precio (paginado)
+- GET `/filter/bpm?min={min}&max={max}` - Filtrar por rango de BPM (paginado)
+- POST `/` - Crear beat (Admin)
+- PUT `/{id}` - Actualizar beat (Admin)
+- DELETE `/{id}` - Eliminar beat (Admin)
+- POST `/{id}/play` - Incrementar reproducciones
+- POST `/{id}/reviews` - **Crear/actualizar reseña** de un beat (Auth, rating 1-5 + comentario)
+- GET `/{id}/reviews` - **Listar reseñas** de un beat (público)
+
+### Reseñas - `/api/reviews`
+- DELETE `/{id}` - **Eliminar reseña propia** (Auth; solo el autor puede eliminarla)
 
 ### Pedidos - `/api/pedidos` (Auth requerido)
 - GET `/mis-pedidos` - Pedidos del usuario
@@ -124,11 +132,29 @@ curl http://localhost:8080/api/beats \
 - GET `/{id}` - Detalle de pago
 
 ### Usuarios - `/api/usuarios`
-- GET `/perfil` - Perfil actual (Auth)
-- PUT `/perfil` - Actualizar perfil (Auth)
+- GET `/me` - Perfil propio (Auth)
+- PUT `/me` - Actualizar perfil propio (Auth)
 - POST `/cambiar-password` - Cambiar contraseña (Auth)
 - GET `/{id}` - Obtener usuario (Admin)
-- GET `/` - Listar usuarios (Admin)
+- GET `/` - Listar usuarios (Admin, paginado)
+- DELETE `/{id}` - Desactivar usuario (Admin)
+- PATCH `/{id}/activate` - Reactivar usuario (Admin)
+
+#### Favoritos / Wishlist - `/api/usuarios/me/favorites` (Auth requerido)
+- POST `/{beatId}` - **Añadir beat a favoritos** (idempotente: no duplica)
+- DELETE `/{beatId}` - **Quitar beat de favoritos** (no falla si no existía)
+- GET `/` - **Listar beats favoritos** del usuario (paginado)
+
+#### Notificaciones del usuario - `/api/usuarios/me/notifications` (Auth requerido)
+- GET `/` - **Listar mis notificaciones** (paginado)
+- GET `/unread-count` - **Conteo de notificaciones no leídas** (`{ "unreadCount": n }`)
+
+### Notificaciones (admin/sistema) - `/api/notifications`
+- POST `/` - Crear notificación para un usuario (Admin; la envía también en tiempo real vía WebSocket a `/user/{id}/queue/notifications`)
+- PUT `/{id}/read` - Marcar notificación como leída (Auth)
+- PUT `/read-all` - Marcar todas como leídas (Auth)
+
+> **WebSocket/STOMP:** endpoint de conexión `/ws` (fallback SockJS en `/ws-sockjs`). Las notificaciones en tiempo real se publican en `/user/queue/notifications`. El handshake STOMP acepta el header `Authorization: Bearer {token}`.
 
 ### Estadísticas - `/api/estadisticas` (Admin)
 - GET `/dashboard` - Dashboard general
@@ -139,16 +165,54 @@ curl http://localhost:8080/api/beats \
 
 ```
 src/main/java/Fullsound/Fullsound/
-├── config/          # Configuración (Security, CORS, Swagger)
-├── controller/      # REST Controllers (6)
+├── config/          # Configuración (Security, CORS, Swagger, WebSocket, Caché)
+├── controller/      # REST Controllers (Auth, Beat, Review, Usuario, Notificacion, Pago, Pedido, ...)
 ├── dto/             # DTOs Request/Response
-├── exception/       # Manejo de excepciones
+├── exception/       # Manejo de excepciones global
 ├── mapper/          # MapStruct mappers
-├── model/           # Entidades JPA (6)
-├── repository/      # Repositorios Spring Data (6)
-├── security/        # JWT + Spring Security
-└── service/         # Lógica de negocio (6)
+├── model/           # Entidades JPA (Beat, Usuario, Rol, Pedido, PedidoItem, Pago, Review, UsuarioFavorito, Notificacion)
+├── repository/      # Repositorios Spring Data
+├── security/        # JWT + Spring Security + Rate Limiting
+├── service/         # Lógica de negocio (Beat, Review, Favorito, Notificacion, Usuario, Auth, Pago, Pedido)
+├── validation/      # Validadores personalizados (RUT)
+└── websocket/       # NotificationPublisher (STOMP)
 ```
+
+## Funcionalidades Avanzadas (Round 3)
+
+### Búsqueda de beats (full-text)
+- Endpoint `GET /api/beats/search?q={texto}` (paginado).
+- Migración `V3__add_beat_fulltext_search.sql`: columna `tsvector` generada (`search_vector`) con pesos por campo (título A, artista B, género C, descripción D) + índice GIN.
+- Query nativa con `plainto_tsquery('spanish', ...)` y `ts_rank`. Degradación graceful a `LIKE` cuando FTS no está disponible (p.ej. H2 en tests).
+
+### Favoritos / Wishlist
+- Entidad `UsuarioFavorito` (join table `usuario_favorito`), migración `V4`.
+- Endpoints bajo `/api/usuarios/me/favorites`. Idempotente.
+- El contador `totalFavoritos` se incluye en la respuesta de `Beat`.
+
+### Reseñas / Valoraciones
+- Entidad `Review` (tabla `review`), migración `V5`. Rating 1-5 con `CHECK`, único por `(beat, usuario)`.
+- Endpoints `POST/GET /api/beats/{id}/reviews` y `DELETE /api/reviews/{id}` (solo el autor).
+- La respuesta de `Beat` incluye `calificacionPromedio` y `totalResenas`.
+
+### Notificaciones in-app
+- Entidad `Notificacion` (tabla `notificacion`), migración `V6`.
+- Endpoints `GET /api/usuarios/me/notifications`, `GET /api/usuarios/me/notifications/unread-count`, `PUT /api/notifications/{id}/read`, `POST /api/notifications` (admin).
+- Publicación en tiempo real vía WebSocket/STOMP (`NotificationPublisher`).
+
+## Migraciones Flyway
+
+```
+src/main/resources/db/migration/
+├── V1__initial_schema.sql
+├── V2__add_audit_columns.sql
+├── V3__add_beat_fulltext_search.sql
+├── V4__add_usuario_favoritos.sql
+├── V5__add_reviews.sql
+└── V6__add_notifications.sql
+```
+
+> En tests se usa H2 en memoria con `spring.flyway.enabled=false` y `ddl-auto=create-drop`, por lo que las migraciones PostgreSQL no se ejecutan en el entorno de test.
 
 ## Schema PostgreSQL
 
@@ -250,15 +314,19 @@ Ver detalles en MIGRACION_POSTGRESQL_COMPLETADA.md
 ## Testing
 
 ```bash
-# Ejecutar tests
-./mvnw test
+# Ejecutar todos los tests (H2 en memoria, sin PostgreSQL)
+mvn test -Pskip-frontend
 
 # Tests específicos
-./mvnw test -Dtest=BeatServiceTest
+mvn test -Pskip-frontend -Dtest=BeatServiceTest
+mvn test -Pskip-frontend -Dtest=AdvancedFeaturesIntegrationTest
 
 # Con cobertura
-./mvnw clean test jacoco:report
+mvn clean test jacoco:report
 ```
+
+Suite actual: **137 tests** (unitarios con Mockito + integración con MockMvc/H2), cubriendo
+auth, beats, pedidos, pagos, búsqueda, favoritos, reseñas y notificaciones.
 
 ## Docker
 

@@ -1,8 +1,12 @@
 package Fullsound.Fullsound.controller;
 import Fullsound.Fullsound.dto.request.BeatRequest;
+import Fullsound.Fullsound.dto.request.ReviewRequest;
 import Fullsound.Fullsound.dto.response.BeatResponse;
 import Fullsound.Fullsound.dto.response.MessageResponse;
+import Fullsound.Fullsound.dto.response.ReviewResponse;
 import Fullsound.Fullsound.service.BeatService;
+import Fullsound.Fullsound.service.ReviewService;
+import Fullsound.Fullsound.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -19,6 +23,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RequestMethod;
 import java.util.List;
@@ -29,6 +34,8 @@ import java.util.List;
 @Tag(name = "🎵 Beats", description = "Gestión del catálogo de beats musicales")
 public class BeatController {
     private final BeatService beatService;
+    private final ReviewService reviewService;
+    private final UsuarioService usuarioService;
     @Operation(
         summary = "Crear nuevo beat",
         description = "Registra un nuevo beat en el catálogo. Requiere rol de administrador.",
@@ -218,5 +225,42 @@ public class BeatController {
             @PathVariable Integer id) {
         beatService.incrementPlays(id);
         return ResponseEntity.ok().build();
+    }
+    @Operation(
+        summary = "Crear o actualizar reseña de un beat",
+        description = "Permite a un usuario autenticado dejar una valoración (1-5) y un comentario sobre un beat. Un usuario solo puede dejar una reseña por beat (se actualiza si ya existe).",
+        security = @SecurityRequirement(name = "Bearer Authentication")
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Reseña creada/actualizada", content = @Content(schema = @Schema(implementation = ReviewResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content),
+        @ApiResponse(responseCode = "404", description = "Beat no encontrado", content = @Content),
+        @ApiResponse(responseCode = "401", description = "No autenticado", content = @Content)
+    })
+    @PostMapping("/{id}/reviews")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ReviewResponse> createReview(
+            @Parameter(description = "ID del beat", required = true, example = "1")
+            @PathVariable Integer id,
+            @Valid @RequestBody ReviewRequest request,
+            Authentication authentication) {
+        Integer usuarioId = usuarioService.getIdByNombreUsuario(authentication.getName());
+        ReviewResponse response = reviewService.createReview(id, usuarioId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+    @Operation(
+        summary = "Listar reseñas de un beat",
+        description = "Devuelve todas las reseñas de un beat ordenadas por fecha descendente."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de reseñas", content = @Content(schema = @Schema(implementation = ReviewResponse.class))),
+        @ApiResponse(responseCode = "404", description = "Beat no encontrado", content = @Content)
+    })
+    @GetMapping("/{id}/reviews")
+    public ResponseEntity<List<ReviewResponse>> getReviews(
+            @Parameter(description = "ID del beat", required = true, example = "1")
+            @PathVariable Integer id) {
+        List<ReviewResponse> responses = reviewService.getReviewsByBeat(id);
+        return ResponseEntity.ok(responses);
     }
 }

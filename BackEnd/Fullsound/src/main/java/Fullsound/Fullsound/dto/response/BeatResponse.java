@@ -26,8 +26,11 @@ public class BeatResponse {
     private String audioUrl;
     private String audioDemoUrl;
     private Integer reproducciones;
-    private String estado;  
-    private String enlaceProducto;  
+    private String estado;
+    private String enlaceProducto;
+    private Double calificacionPromedio;
+    private Integer totalResenas;
+    private Integer totalFavoritos;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
