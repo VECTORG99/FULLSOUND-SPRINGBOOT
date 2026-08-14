@@ -1,0 +1,87 @@
+# FullSound - GitIgnore
+
+# Frontend (Node/React)
+FrontEnd/node_modules/
+FrontEnd/dist/
+FrontEnd/.vite/
+FrontEnd/coverage/
+FrontEnd/.env
+FrontEnd/.env.local
+FrontEnd/.env.production
+FrontEnd/npm-debug.log*
+FrontEnd/yarn-debug.log*
+FrontEnd/yarn-error.log*
+FrontEnd/package-lock.json
+
+# Backend (Spring Boot/Maven)
+BackEnd/Fullsound/target/
+Fullsound/target/
+BackEnd/Fullsound/.mvn/wrapper/maven-wrapper.jar
+BackEnd/Fullsound/mvnw
+BackEnd/Fullsound/mvnw.cmd
+BackEnd/Fullsound/.idea/
+BackEnd/Fullsound/*.iml
+BackEnd/Fullsound/.classpath
+BackEnd/Fullsound/.project
+BackEnd/Fullsound/.settings/
+BackEnd/Fullsound/.vscode/
+
+# Build artifacts
+*.jar
+*.war
+*.ear
+*.class
+*.log
+
+# Spring Boot
+BackEnd/Fullsound/src/main/resources/static/assets/
+BackEnd/Fullsound/src/main/resources/static/index.html
+BackEnd/Fullsound/src/main/resources/static/favicon.ico
+
+# Database
+*.db
+*.sqlite
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
+
+# Logs
+logs/
+*.log
+
+# Maven wrapper (el .jar se ignora, pero maven-wrapper.properties NO)
+.mvn/wrapper/maven-wrapper.jar
+
+# ========================================
+# DOCKER
+# ========================================
+# Environment variables (contiene secretos)
+.env
+
+# Logs de contenedores
+logs/backend/*.log
+logs/frontend/*.log
+
+# Backups de base de datos
+backup_*.sql
+
+# Volúmenes locales (si se montan)
+docker/volumes/
+
+# Docker Compose overrides
+docker-compose.override.yml
