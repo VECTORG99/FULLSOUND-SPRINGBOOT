@@ -14,12 +14,12 @@ jobs:
 
     steps:
       - name: Checkout Backend code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: backend
       
       - name: Checkout Frontend code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: Axel-DaMage/FullSound_React
           ref: main
