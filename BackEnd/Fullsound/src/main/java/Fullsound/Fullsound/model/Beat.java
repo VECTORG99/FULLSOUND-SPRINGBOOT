@@ -1,8 +1,7 @@
 package Fullsound.Fullsound.model;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import lombok.experimental.SuperBuilder;
 import java.time.LocalDateTime;
 @Entity
 @Table(name = "beat", indexes = {
@@ -12,9 +11,8 @@ import java.time.LocalDateTime;
 })
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Beat {
+@SuperBuilder
+public class Beat extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_beat")
@@ -54,13 +52,7 @@ public class Beat {
     private Integer reproducciones = 0;
     @Column(name = "estado", length = 20, nullable = false)
     @Builder.Default
-    private String estado = "DISPONIBLE";  
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private String estado = "DISPONIBLE";
     @Transient
     public String getPrecioFormateado() {
         return precio != null ? String.format("$%,d", precio) : "$0";

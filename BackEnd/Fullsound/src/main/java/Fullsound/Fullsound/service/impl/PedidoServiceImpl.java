@@ -13,6 +13,8 @@ import Fullsound.Fullsound.repository.PedidoRepository;
 import Fullsound.Fullsound.repository.UsuarioRepository;
 import Fullsound.Fullsound.service.PedidoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -96,6 +98,12 @@ public class PedidoServiceImpl implements PedidoService {
         return pedidos.stream()
                 .map(pedidoMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PedidoResponse> getAll(Pageable pageable) {
+        return pedidoRepository.findAll(pageable)
+                .map(pedidoMapper::toResponse);
     }
     @Override
     @Transactional

@@ -1,5 +1,7 @@
 package Fullsound.Fullsound.repository;
 import Fullsound.Fullsound.model.Beat;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,8 +14,11 @@ public interface BeatRepository extends JpaRepository<Beat, Integer> {
     List<Beat> findByEstado(String estado);
     @Query("SELECT b FROM Beat b WHERE b.estado = 'DISPONIBLE'")
     List<Beat> findAllAvailable();
+    Page<Beat> findByEstado(String estado, Pageable pageable);
     List<Beat> findByPrecioBetween(Integer precioMin, Integer precioMax);
+    Page<Beat> findByPrecioBetween(Integer precioMin, Integer precioMax, Pageable pageable);
     List<Beat> findByBpmBetween(Integer bpmMin, Integer bpmMax);
+    Page<Beat> findByBpmBetween(Integer bpmMin, Integer bpmMax, Pageable pageable);
     List<Beat> findByTonalidad(String tonalidad);
     List<Beat> findByGeneroContainingIgnoreCase(String genero);
     @Query("SELECT b FROM Beat b WHERE b.estado = 'DISPONIBLE' AND " +
@@ -22,6 +27,12 @@ public interface BeatRepository extends JpaRepository<Beat, Integer> {
            "LOWER(b.etiquetas) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(b.genero) LIKE LOWER(CONCAT('%', :query, '%')))")
     List<Beat> search(@Param("query") String query);
+    @Query("SELECT b FROM Beat b WHERE b.estado = 'DISPONIBLE' AND " +
+           "(LOWER(b.titulo) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(b.artista) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(b.etiquetas) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(b.genero) LIKE LOWER(CONCAT('%', :query, '%')))")
+    Page<Beat> search(@Param("query") String query, Pageable pageable);
     @Query("SELECT b FROM Beat b WHERE b.estado = 'DISPONIBLE' ORDER BY b.reproducciones DESC LIMIT :limit")
     List<Beat> findTopByOrderByReproduccionesDesc(@Param("limit") int limit);
     @Query("SELECT b FROM Beat b WHERE b.estado = 'DISPONIBLE' ORDER BY b.createdAt DESC LIMIT :limit")

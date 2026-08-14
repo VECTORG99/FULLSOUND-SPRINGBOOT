@@ -1,6 +1,7 @@
 package Fullsound.Fullsound.model;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -11,9 +12,8 @@ import java.util.List;
 })
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Pedido {
+@SuperBuilder
+public class Pedido extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_compra")

@@ -1,0 +1,76 @@
+# ============================================================
+# FULLSOUND - Docker Compose
+# ============================================================
+# Levanta PostgreSQL 16 y la aplicación Spring Boot con
+# networking y healthchecks configurados.
+# ============================================================
+#
+# Uso:
+#   1. Crear un archivo .env con las variables (ver .env.example)
+#   2. Ejecutar: docker compose up --build
+#
+# ============================================================
+
+services:
+  # ==================== BASE DE DATOS ====================
+  db:
+    image: postgres:16-alpine
+    container_name: fullsound-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fullsound}
+      POSTGRES_USER: ${POSTGRES_USER:-fullsound}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fullsound_secret}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fullsound} -d ${POSTGRES_DB:-fullsound}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - fullsound-network
+
+  # ==================== APLICACIÓN SPRING BOOT ====================
+  app:
+    build:
+      context: ./BackEnd/Fullsound
+      dockerfile: Dockerfile
+    container_name: fullsound-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-fullsound}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-fullsound}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-fullsound_secret}
+      JWT_SECRET: ${JWT_SECRET:-myDefaultJwtSecretKeyForDevelopmentOnlyPleaseChangeInProduction1234567890}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      STRIPE_API_KEY: ${STRIPE_API_KEY:-sk_test_disabled}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_disabled}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - fullsound-network
+
+# ==================== VOLÚMENES ====================
+volumes:
+  postgres_data:
+    driver: local
+
+# ==================== REDES ====================
+networks:
+  fullsound-network:
+    driver: bridge

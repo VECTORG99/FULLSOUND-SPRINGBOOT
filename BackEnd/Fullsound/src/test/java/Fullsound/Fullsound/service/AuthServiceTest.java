@@ -9,6 +9,7 @@ import Fullsound.Fullsound.model.Usuario;
 import Fullsound.Fullsound.repository.RolRepository;
 import Fullsound.Fullsound.repository.UsuarioRepository;
 import Fullsound.Fullsound.security.JwtTokenProvider;
+import Fullsound.Fullsound.security.PasswordResetTokenStore;
 import Fullsound.Fullsound.security.UserDetailsImpl;
 import Fullsound.Fullsound.service.impl.AuthServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +43,8 @@ class AuthServiceTest {
     private PasswordEncoder passwordEncoder;
     @Mock
     private JwtTokenProvider tokenProvider;
+    @Mock
+    private PasswordResetTokenStore passwordResetTokenStore;
     @InjectMocks
     private AuthServiceImpl authService;
     private RegisterRequest registerRequest;

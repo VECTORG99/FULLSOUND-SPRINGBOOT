@@ -1,15 +1,14 @@
 package Fullsound.Fullsound.model;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
+import lombok.experimental.SuperBuilder;
 import java.time.LocalDateTime;
 @Entity
 @Table(name = "pago")
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Pago {
+@SuperBuilder
+public class Pago extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_pago")
@@ -29,9 +28,6 @@ public class Pago {
     @Column(name = "moneda", length = 3)
     @Builder.Default
     private String moneda = "CLP";
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
     @Column(name = "processed_at")
     private LocalDateTime processedAt;
     @Override

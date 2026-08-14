@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+@Service
 @RequiredArgsConstructor
 public class PagoServiceImpl implements PagoService {
     private final PagoRepository pagoRepository;

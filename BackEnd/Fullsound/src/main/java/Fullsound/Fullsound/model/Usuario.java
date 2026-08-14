@@ -1,9 +1,7 @@
 package Fullsound.Fullsound.model;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-import java.time.LocalDateTime;
+import lombok.experimental.SuperBuilder;
 import java.util.HashSet;
 import java.util.Set;
 @Entity
@@ -13,9 +11,8 @@ import java.util.Set;
 })
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Usuario {
+@SuperBuilder
+public class Usuario extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_usuario")
@@ -33,14 +30,6 @@ public class Usuario {
     @Column(name = "activo", nullable = false)
     @Builder.Default
     private Boolean activo = true;
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-    
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-    
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "usuario_roles",

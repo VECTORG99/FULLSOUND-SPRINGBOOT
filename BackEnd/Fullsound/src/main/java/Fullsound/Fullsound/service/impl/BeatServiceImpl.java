@@ -8,7 +8,11 @@ import Fullsound.Fullsound.repository.BeatRepository;
 import Fullsound.Fullsound.service.BeatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.text.Normalizer;
@@ -22,6 +26,7 @@ public class BeatServiceImpl implements BeatService {
     private final BeatMapper beatMapper;
     @Override
     @Transactional
+    @CacheEvict(cacheNames = {"beats", "beatList"}, allEntries = true)
     public BeatResponse create(BeatRequest request) {
         Beat beat = beatMapper.toEntity(request);
         beat.setSlug(generateSlug(request.getTitulo()));
@@ -43,6 +48,7 @@ public class BeatServiceImpl implements BeatService {
     }
     @Override
     @Transactional
+    @CacheEvict(cacheNames = {"beats", "beatList"}, allEntries = true)
     public BeatResponse update(Integer id, BeatRequest request) {
         Beat beat = beatRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Beat", "id", id));
@@ -55,6 +61,7 @@ public class BeatServiceImpl implements BeatService {
     }
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "beats", key = "#id")
     public BeatResponse getById(Integer id) {
         Beat beat = beatRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Beat", "id", id));
@@ -62,6 +69,7 @@ public class BeatServiceImpl implements BeatService {
     }
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "beats", key = "#slug")
     public BeatResponse getBySlug(String slug) {
         Beat beat = beatRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Beat", "slug", slug));
@@ -69,10 +77,18 @@ public class BeatServiceImpl implements BeatService {
     }
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "beatList", key = "'all'")
     public List<BeatResponse> getAllActive() {
         return beatRepository.findAll().stream()
                 .map(beatMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+    @Override
+    @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "beatList", key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort.toString()")
+    public Page<BeatResponse> getAllActive(Pageable pageable) {
+        return beatRepository.findAll(pageable)
+                .map(beatMapper::toResponse);
     }
     @Override
     @Transactional(readOnly = true)
@@ -90,10 +106,22 @@ public class BeatServiceImpl implements BeatService {
     }
     @Override
     @Transactional(readOnly = true)
+    public Page<BeatResponse> search(String query, Pageable pageable) {
+        return beatRepository.search(query, pageable)
+                .map(beatMapper::toResponse);
+    }
+    @Override
+    @Transactional(readOnly = true)
     public List<BeatResponse> filterByPrice(Integer min, Integer max) {
         return beatRepository.findByPrecioBetween(min, max).stream()
                 .map(beatMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public Page<BeatResponse> filterByPrice(Integer min, Integer max, Pageable pageable) {
+        return beatRepository.findByPrecioBetween(min, max, pageable)
+                .map(beatMapper::toResponse);
     }
     @Override
     @Transactional(readOnly = true)
@@ -103,7 +131,14 @@ public class BeatServiceImpl implements BeatService {
                 .collect(Collectors.toList());
     }
     @Override
+    @Transactional(readOnly = true)
+    public Page<BeatResponse> filterByBpm(Integer min, Integer max, Pageable pageable) {
+        return beatRepository.findByBpmBetween(min, max, pageable)
+                .map(beatMapper::toResponse);
+    }
+    @Override
     @Transactional
+    @CacheEvict(cacheNames = {"beats", "beatList"}, allEntries = true)
     public void delete(Integer id) {
         Beat beat = beatRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Beat", "id", id));
@@ -111,6 +146,7 @@ public class BeatServiceImpl implements BeatService {
     }
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "beats", key = "#id")
     public void incrementPlays(Integer id) {
         Beat beat = beatRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Beat", "id", id));

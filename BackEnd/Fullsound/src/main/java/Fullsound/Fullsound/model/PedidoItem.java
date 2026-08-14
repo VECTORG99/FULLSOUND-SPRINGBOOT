@@ -1,13 +1,13 @@
 package Fullsound.Fullsound.model;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 @Entity
 @Table(name = "compra_detalle")
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class PedidoItem {
+@SuperBuilder
+public class PedidoItem extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_detalle")

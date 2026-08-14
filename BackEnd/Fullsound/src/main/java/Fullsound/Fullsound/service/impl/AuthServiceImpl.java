@@ -1,17 +1,23 @@
 package Fullsound.Fullsound.service.impl;
 import Fullsound.Fullsound.dto.request.LoginRequest;
 import Fullsound.Fullsound.dto.request.RegisterRequest;
+import Fullsound.Fullsound.dto.request.ForgotPasswordRequest;
+import Fullsound.Fullsound.dto.request.ResetPasswordRequest;
 import Fullsound.Fullsound.dto.response.AuthResponse;
 import Fullsound.Fullsound.dto.response.MessageResponse;
 import Fullsound.Fullsound.exception.BadRequestException;
+import Fullsound.Fullsound.exception.ResourceNotFoundException;
 import Fullsound.Fullsound.model.Rol;
 import Fullsound.Fullsound.model.Usuario;
 import Fullsound.Fullsound.repository.RolRepository;
 import Fullsound.Fullsound.repository.UsuarioRepository;
 import Fullsound.Fullsound.security.JwtTokenProvider;
+import Fullsound.Fullsound.security.PasswordResetTokenStore;
 import Fullsound.Fullsound.security.UserDetailsImpl;
 import Fullsound.Fullsound.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -27,11 +33,13 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
     private final AuthenticationManager authenticationManager;
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
+    private final PasswordResetTokenStore passwordResetTokenStore;
     @Override
     @Transactional
     public MessageResponse register(RegisterRequest request) {
@@ -94,5 +102,46 @@ public class AuthServiceImpl implements AuthService {
                 userDetails.getCorreo(),
                 roles
         );
+    }
+    @Override
+    public MessageResponse forgotPassword(ForgotPasswordRequest request) {
+        // Por seguridad, siempre devolvemos éxito incluso si el correo no existe
+        usuarioRepository.findByCorreo(request.getCorreo()).ifPresent(usuario -> {
+            String token = passwordResetTokenStore.generateToken(usuario.getCorreo());
+            // Como no hay servicio de email, registramos el token en el log
+            log.info("Token de restablecimiento generado para {}: {}", usuario.getCorreo(), token);
+        });
+        return MessageResponse.builder()
+                .message("Si el correo existe, se ha enviado un enlace de restablecimiento")
+                .success(true)
+                .build();
+    }
+    @Override
+    @Transactional
+    public MessageResponse resetPassword(ResetPasswordRequest request) {
+        if (!passwordResetTokenStore.isValid(request.getToken())) {
+            throw new BadRequestException("Token inválido o expirado");
+        }
+        String correo = passwordResetTokenStore.getCorreoForToken(request.getToken());
+        if (correo == null) {
+            throw new BadRequestException("Token inválido o expirado");
+        }
+        Usuario usuario = usuarioRepository.findByCorreo(correo)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", "correo", correo));
+        usuario.setContraseña(passwordEncoder.encode(request.getNuevaContraseña()));
+        usuarioRepository.save(usuario);
+        passwordResetTokenStore.invalidate(request.getToken());
+        return MessageResponse.builder()
+                .message("Contraseña restablecida exitosamente")
+                .success(true)
+                .build();
+    }
+    @Override
+    public boolean isUsernameAvailable(String username) {
+        return !usuarioRepository.existsByNombreUsuario(username);
+    }
+    @Override
+    public boolean isEmailAvailable(String email) {
+        return !usuarioRepository.existsByCorreo(email);
     }
 }

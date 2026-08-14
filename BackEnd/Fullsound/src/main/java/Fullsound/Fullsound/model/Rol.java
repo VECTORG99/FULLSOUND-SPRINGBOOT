@@ -1,13 +1,13 @@
 package Fullsound.Fullsound.model;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 @Entity
 @Table(name = "tipo_usuario")
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class Rol {
+@SuperBuilder
+public class Rol extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_tipo_usuario")

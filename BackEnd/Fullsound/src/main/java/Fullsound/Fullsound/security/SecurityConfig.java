@@ -28,6 +28,7 @@ public class SecurityConfig {
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtAuthenticationEntryPoint unauthorizedHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitFilter rateLimitFilter;
 
     @Value("${cors.allowed.origins:http://localhost:5173}")
     private String corsOrigins;
@@ -55,7 +56,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/upload/**").authenticated()
-                .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/api/health", "/api/health/**").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api-docs/**", "/api-docs").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/beats/**").permitAll()
                 .requestMatchers("/carrito", "/carrito/**", "/api/carrito/**").permitAll()
@@ -63,6 +65,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             );
         http.authenticationProvider(authenticationProvider());
+        http.addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
