@@ -1,10 +1,8 @@
 package Fullsound.Fullsound.controller;
 import Fullsound.Fullsound.dto.request.PedidoRequest;
 import Fullsound.Fullsound.dto.response.PedidoResponse;
-import Fullsound.Fullsound.exception.ResourceNotFoundException;
-import Fullsound.Fullsound.model.Usuario;
-import Fullsound.Fullsound.repository.UsuarioRepository;
 import Fullsound.Fullsound.service.PedidoService;
+import Fullsound.Fullsound.service.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,16 +17,14 @@ import java.util.List;
 @CrossOrigin(originPatterns = "*", allowedHeaders = "*")
 public class PedidoController {
     private final PedidoService pedidoService;
-    private final UsuarioRepository usuarioRepository;
+    private final UsuarioService usuarioService;
     @PostMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<PedidoResponse> create(
             @Valid @RequestBody PedidoRequest request,
             Authentication authentication) {
-        String nombreUsuario = authentication.getName();
-        Usuario usuario = usuarioRepository.findByNombreUsuario(nombreUsuario)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario", "nombreUsuario", nombreUsuario));
-        PedidoResponse response = pedidoService.create(request, usuario.getId());
+        Integer usuarioId = usuarioService.getIdByNombreUsuario(authentication.getName());
+        PedidoResponse response = pedidoService.create(request, usuarioId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     @GetMapping("/{id}")
@@ -46,10 +42,8 @@ public class PedidoController {
     @GetMapping("/mis-pedidos")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<PedidoResponse>> getMisPedidos(Authentication authentication) {
-        String nombreUsuario = authentication.getName();
-        Usuario usuario = usuarioRepository.findByNombreUsuario(nombreUsuario)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario", "nombreUsuario", nombreUsuario));
-        List<PedidoResponse> responses = pedidoService.getByUsuario(usuario.getId());
+        Integer usuarioId = usuarioService.getIdByNombreUsuario(authentication.getName());
+        List<PedidoResponse> responses = pedidoService.getByUsuario(usuarioId);
         return ResponseEntity.ok(responses);
     }
     @GetMapping

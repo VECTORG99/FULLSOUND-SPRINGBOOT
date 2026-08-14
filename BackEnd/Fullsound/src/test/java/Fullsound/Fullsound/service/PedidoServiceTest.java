@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -62,7 +63,7 @@ class PedidoServiceTest {
                 .correo("test@example.com")
                 .contraseña("encodedPassword")
                 .activo(true)
-                .rol(rol)
+                .roles(Set.of(rol))
                 .build();
         beat = Beat.builder()
                 .id(1)

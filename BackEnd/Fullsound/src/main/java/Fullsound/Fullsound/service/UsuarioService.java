@@ -5,6 +5,7 @@ import java.util.List;
 public interface UsuarioService {
     UsuarioResponse getById(Integer id);
     UsuarioResponse getByNombreUsuario(String nombreUsuario);
+    Integer getIdByNombreUsuario(String nombreUsuario);
     List<UsuarioResponse> getAll();
     UsuarioResponse updateProfile(String nombreUsuario, UpdateUsuarioRequest request);
     UsuarioResponse updateById(Integer id, UpdateUsuarioRequest request);

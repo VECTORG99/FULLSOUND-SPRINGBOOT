@@ -5,7 +5,11 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 @Entity
-@Table(name = "beat")
+@Table(name = "beat", indexes = {
+    @Index(name = "idx_beat_slug", columnList = "slug"),
+    @Index(name = "idx_beat_titulo", columnList = "titulo"),
+    @Index(name = "idx_beat_genero", columnList = "genero")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

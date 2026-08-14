@@ -1,5 +1,5 @@
 # Etapa 1: Compilar con Maven
-FROM maven:3.9-eclipse-temurin-17 AS builder
+FROM maven:3.9-eclipse-temurin-21 AS builder
 
 WORKDIR /build
 
@@ -16,7 +16,7 @@ COPY src ./src
 RUN mvn clean package
 
 # Etapa 2: Imagen final ligera
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
@@ -28,7 +28,7 @@ EXPOSE 8080
 
 # Variables de entorno
 ENV DB_PASSWORD=${DB_PASSWORD}
-ENV JWT_SECRET=${JWT_SECRET:-MySecretKeyForJWTTokenGenerationShouldBeLongEnoughForHS512AlgorithmFullsoundBackend2025ProductionSecureKey}
+ENV JWT_SECRET=${JWT_SECRET}
 ENV SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-prod}
 
 # Ejecutar la aplicación

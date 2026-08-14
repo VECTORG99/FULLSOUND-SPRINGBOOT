@@ -127,10 +127,4 @@ public class BeatController {
         beatService.incrementPlays(id);
         return ResponseEntity.ok().build();
     }
-    @PostMapping("/{id}/like")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<MessageResponse> incrementLikes(@PathVariable Integer id) {
-        return ResponseEntity.status(HttpStatus.GONE)
-            .body(new MessageResponse("La funcionalidad de likes ha sido removida", false));
-    }
 }

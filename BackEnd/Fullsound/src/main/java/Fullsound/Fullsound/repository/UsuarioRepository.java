@@ -12,6 +12,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
     boolean existsByNombreUsuario(String nombreUsuario);
     boolean existsByCorreo(String correo);
     List<Usuario> findByActivo(Boolean activo);
-    @Query("SELECT u FROM Usuario u WHERE u.rol.tipo = :rolTipo")
+    @Query("SELECT u FROM Usuario u JOIN u.roles r WHERE r.tipo = :rolTipo")
     List<Usuario> findByRolTipo(String rolTipo);
 }

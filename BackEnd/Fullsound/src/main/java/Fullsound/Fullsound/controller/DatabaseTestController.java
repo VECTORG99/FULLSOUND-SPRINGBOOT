@@ -144,7 +144,7 @@ public class DatabaseTestController {
     public ResponseEntity<Map<String, Object>> executeTestQuery() {
         Map<String, Object> response = new HashMap<>();
         try (Connection conn = dataSource.getConnection()) {
-            String sql = "SELECT CURRENT_TIMESTAMP as current_time, CURRENT_DATABASE() as current_db, VERSION() as version";
+            String sql = "SELECT CURRENT_TIMESTAMP as current_time, current_database() as current_db, version() as version";
             try (var stmt = conn.createStatement(); var rs = stmt.executeQuery(sql)) {
                 if (rs.next()) {
                     Map<String, Object> queryResult = new HashMap<>();

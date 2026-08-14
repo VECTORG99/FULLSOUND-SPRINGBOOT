@@ -35,6 +35,13 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
     @Override
     @Transactional(readOnly = true)
+    public Integer getIdByNombreUsuario(String nombreUsuario) {
+        Usuario usuario = usuarioRepository.findByNombreUsuario(nombreUsuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", "nombreUsuario", nombreUsuario));
+        return usuario.getId();
+    }
+    @Override
+    @Transactional(readOnly = true)
     public List<UsuarioResponse> getAll() {
         List<Usuario> usuarios = usuarioRepository.findAll();
         return usuarios.stream()

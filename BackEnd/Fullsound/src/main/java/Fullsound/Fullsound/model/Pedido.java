@@ -6,7 +6,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 @Entity
-@Table(name = "compra")
+@Table(name = "compra", indexes = {
+    @Index(name = "idx_compra_numero_pedido", columnList = "numero_pedido")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

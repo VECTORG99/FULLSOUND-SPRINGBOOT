@@ -4,8 +4,13 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 @Entity
-@Table(name = "usuario")
+@Table(name = "usuario", indexes = {
+    @Index(name = "idx_usuario_correo", columnList = "correo"),
+    @Index(name = "idx_usuario_nombre_usuario", columnList = "nombre_usuario")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -36,9 +41,14 @@ public class Usuario {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "id_rol", nullable = false)
-    private Rol rol;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "usuario_roles",
+        joinColumns = @JoinColumn(name = "usuario_id"),
+        inverseJoinColumns = @JoinColumn(name = "rol_id")
+    )
+    @Builder.Default
+    private Set<Rol> roles = new HashSet<>();
     @Column(name = "nombre", length = 100)
     private String nombre;
     @Column(name = "apellido", length = 100)

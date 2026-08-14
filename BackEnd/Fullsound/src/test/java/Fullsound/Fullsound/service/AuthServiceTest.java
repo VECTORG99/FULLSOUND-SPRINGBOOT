@@ -25,6 +25,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -62,7 +63,7 @@ class AuthServiceTest {
                 .nombre("Test")
                 .apellido("User")
                 .activo(true)
-                .rol(rol)
+                .roles(Set.of(rol))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();

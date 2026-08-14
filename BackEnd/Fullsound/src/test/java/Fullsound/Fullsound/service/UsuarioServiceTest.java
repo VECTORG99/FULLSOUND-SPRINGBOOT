@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -52,7 +53,7 @@ class UsuarioServiceTest {
                 .correo("test@example.com")
                 .contraseña("encodedPassword")
                 .activo(true)
-                .rol(rol)
+                .roles(Set.of(rol))
                 .nombre("Test")
                 .apellido("User")
                 .createdAt(LocalDateTime.now())
@@ -113,7 +114,7 @@ class UsuarioServiceTest {
                     .nombreUsuario("user2")
                     .correo("user2@example.com")
                     .activo(true)
-                    .rol(rol)
+                    .roles(Set.of(rol))
                     .build();
             UsuarioResponse response2 = UsuarioResponse.builder()
                     .id(2)

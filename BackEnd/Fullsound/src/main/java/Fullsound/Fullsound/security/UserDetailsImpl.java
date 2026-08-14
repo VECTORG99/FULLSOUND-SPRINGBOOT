@@ -1,4 +1,5 @@
 package Fullsound.Fullsound.security;
+import Fullsound.Fullsound.model.Rol;
 import Fullsound.Fullsound.model.Usuario;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,8 +19,10 @@ public class UserDetailsImpl implements UserDetails {
     private Collection<? extends GrantedAuthority> authorities;
     public static UserDetailsImpl build(Usuario usuario) {
         List<GrantedAuthority> authorities = new java.util.ArrayList<>();
-        if (usuario.getRol() != null) {
-            authorities.add(new SimpleGrantedAuthority(usuario.getRol().getTipo()));
+        if (usuario.getRoles() != null) {
+            for (Rol rol : usuario.getRoles()) {
+                authorities.add(new SimpleGrantedAuthority(rol.getTipo()));
+            }
         }
         return new UserDetailsImpl(
                 usuario.getId(),

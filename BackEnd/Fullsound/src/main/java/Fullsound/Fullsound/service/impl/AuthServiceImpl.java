@@ -20,7 +20,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -43,6 +46,8 @@ public class AuthServiceImpl implements AuthService {
                 : "cliente";
         Rol rol = rolRepository.findByTipo(tipoRol)
                 .orElseThrow(() -> new BadRequestException("Rol '" + tipoRol + "' no encontrado"));
+        Set<Rol> roles = new HashSet<>();
+        roles.add(rol);
         Usuario usuario = Usuario.builder()
                 .nombreUsuario(request.getNombreUsuario())
                 .rut(request.getRut())
@@ -51,7 +56,7 @@ public class AuthServiceImpl implements AuthService {
                 .apellido(request.getApellido())
                 .contraseña(passwordEncoder.encode(request.getContraseña()))
                 .activo(true)
-                .rol(rol)
+                .roles(roles)
                 .build();
         usuarioRepository.save(usuario);
         return MessageResponse.builder()
@@ -79,8 +84,8 @@ public class AuthServiceImpl implements AuthService {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         Usuario usuario = usuarioRepository.findByNombreUsuario(userDetails.getUsername())
                 .orElseThrow(() -> new BadRequestException("Usuario no encontrado"));
-        List<String> roles = usuario.getRol() != null 
-                ? Collections.singletonList(usuario.getRol().getTipo())
+        List<String> roles = usuario.getRoles() != null && !usuario.getRoles().isEmpty()
+                ? usuario.getRoles().stream().map(r -> r.getTipo()).collect(Collectors.toList())
                 : Collections.emptyList();
         return new AuthResponse(
                 jwt,
