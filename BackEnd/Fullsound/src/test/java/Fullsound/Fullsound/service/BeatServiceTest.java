@@ -190,7 +190,7 @@ class BeatServiceTest {
         @Test
         @DisplayName("Should filter beats by price range")
         void shouldFilterBeatsByPriceRange() {
-            when(beatRepository.findAll()).thenReturn(Arrays.asList(beat));
+            when(beatRepository.findByPrecioBetween(5000, 15000)).thenReturn(Arrays.asList(beat));
             when(beatMapper.toResponse(beat)).thenReturn(beatResponse);
             List<BeatResponse> result = beatService.filterByPrice(5000, 15000);
             assertNotNull(result);
@@ -199,7 +199,7 @@ class BeatServiceTest {
         @Test
         @DisplayName("Should filter beats by BPM range")
         void shouldFilterBeatsByBpmRange() {
-            when(beatRepository.findAll()).thenReturn(Arrays.asList(beat));
+            when(beatRepository.findByBpmBetween(100, 140)).thenReturn(Arrays.asList(beat));
             when(beatMapper.toResponse(beat)).thenReturn(beatResponse);
             List<BeatResponse> result = beatService.filterByBpm(100, 140);
             assertNotNull(result);

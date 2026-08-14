@@ -7,6 +7,8 @@ import Fullsound.Fullsound.model.Beat;
 import Fullsound.Fullsound.repository.BeatRepository;
 import Fullsound.Fullsound.service.BeatService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.text.Normalizer;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BeatServiceImpl implements BeatService {
     private final BeatRepository beatRepository;
     private final BeatMapper beatMapper;
@@ -22,8 +25,21 @@ public class BeatServiceImpl implements BeatService {
     public BeatResponse create(BeatRequest request) {
         Beat beat = beatMapper.toEntity(request);
         beat.setSlug(generateSlug(request.getTitulo()));
-        Beat savedBeat = beatRepository.save(beat);
-        return beatMapper.toResponse(savedBeat);
+        int maxRetries = 3;
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                Beat savedBeat = beatRepository.save(beat);
+                return beatMapper.toResponse(savedBeat);
+            } catch (DataIntegrityViolationException e) {
+                if (attempt == maxRetries) {
+                    log.error("No se pudo generar un slug único para el beat '{}' tras {} intentos", request.getTitulo(), maxRetries);
+                    throw e;
+                }
+                log.warn("Conflicto de slug detectado (intento {}/{}), reintentando con contador incrementado", attempt, maxRetries);
+                beat.setSlug(generateSlug(request.getTitulo(), attempt));
+            }
+        }
+        throw new DataIntegrityViolationException("No se pudo generar un slug único para el beat");
     }
     @Override
     @Transactional
@@ -75,16 +91,14 @@ public class BeatServiceImpl implements BeatService {
     @Override
     @Transactional(readOnly = true)
     public List<BeatResponse> filterByPrice(Integer min, Integer max) {
-        return beatRepository.findAll().stream()
-                .filter(beat -> beat.getPrecio() >= min && beat.getPrecio() <= max)
+        return beatRepository.findByPrecioBetween(min, max).stream()
                 .map(beatMapper::toResponse)
                 .collect(Collectors.toList());
     }
     @Override
     @Transactional(readOnly = true)
     public List<BeatResponse> filterByBpm(Integer min, Integer max) {
-        return beatRepository.findAll().stream()
-                .filter(beat -> beat.getBpm() != null && beat.getBpm() >= min && beat.getBpm() <= max)
+        return beatRepository.findByBpmBetween(min, max).stream()
                 .map(beatMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -109,12 +123,15 @@ public class BeatServiceImpl implements BeatService {
         throw new UnsupportedOperationException("La funcionalidad de likes ha sido removida del schema de base de datos");
     }
     private String generateSlug(String titulo) {
+        return generateSlug(titulo, 1);
+    }
+    private String generateSlug(String titulo, int startCounter) {
         String slug = Normalizer.normalize(titulo, Normalizer.Form.NFD);
         slug = slug.replaceAll("[^\\p{ASCII}]", "");
         slug = slug.toLowerCase().replaceAll("[^a-z0-9]+", "-");
         slug = slug.replaceAll("^-|-$", "");
         String finalSlug = slug;
-        int counter = 1;
+        int counter = startCounter;
         while (beatRepository.findBySlug(finalSlug).isPresent()) {
             finalSlug = slug + "-" + counter++;
         }

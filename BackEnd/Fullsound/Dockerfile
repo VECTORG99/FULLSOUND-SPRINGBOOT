@@ -12,8 +12,8 @@ RUN mvn dependency:go-offline -B
 # Copiar código fuente
 COPY src ./src
 
-# Compilar la aplicación (sin ejecutar tests para ser más rápido)
-RUN mvn clean package -DskipTests
+# Compilar la aplicación (incluyendo tests; si fallan, es señal de un problema)
+RUN mvn clean package
 
 # Etapa 2: Imagen final ligera
 FROM eclipse-temurin:17-jre-alpine

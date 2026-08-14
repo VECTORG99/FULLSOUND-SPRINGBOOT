@@ -1,5 +1,7 @@
 package Fullsound.Fullsound.config;
 import io.github.cdimascio.dotenv.Dotenv;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -8,14 +10,15 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 public class DotenvConfig implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+    private static final Logger log = LoggerFactory.getLogger(DotenvConfig.class);
     @Override
     public void initialize(ConfigurableApplicationContext applicationContext) {
         ConfigurableEnvironment environment = applicationContext.getEnvironment();
         try {
             String[] locations = {
-                "../../",            
-                "../../../",         
-                "./"                
+                "../../",
+                "../../../",
+                "./"
             };
             Dotenv dotenv = null;
             for (String location : locations) {
@@ -25,25 +28,24 @@ public class DotenvConfig implements ApplicationContextInitializer<ConfigurableA
                             .directory(location)
                             .ignoreIfMissing()
                             .load();
-                    System.out.println("✓ Archivo .env encontrado en: " + envFile.getAbsolutePath());
+                    log.info("Archivo .env encontrado en: {}", envFile.getAbsolutePath());
                     break;
                 }
             }
             if (dotenv == null) {
-                System.err.println("⚠ No se encontró el archivo .env");
+                log.warn("No se encontró el archivo .env");
                 return;
             }
             Map<String, Object> dotenvMap = new HashMap<>();
             dotenv.entries().forEach(entry -> {
                 dotenvMap.put(entry.getKey(), entry.getValue());
-                System.out.println("  → " + entry.getKey() + " cargada");
+                log.debug("Variable de entorno cargada: {}", entry.getKey());
             });
             environment.getPropertySources()
                     .addFirst(new MapPropertySource("dotenvProperties", dotenvMap));
-            System.out.println("✓ Variables de entorno cargadas desde .env");
+            log.info("Variables de entorno cargadas desde .env");
         } catch (Exception e) {
-            System.err.println("⚠ Error al cargar el archivo .env: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error al cargar el archivo .env: {}", e.getMessage(), e);
         }
     }
 }

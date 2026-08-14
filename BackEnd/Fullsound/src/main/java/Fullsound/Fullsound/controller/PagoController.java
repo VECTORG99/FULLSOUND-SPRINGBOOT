@@ -23,10 +23,7 @@ public class PagoController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<PagoResponse> processPago(
             @PathVariable Integer pagoId,
-            @RequestParam String stripeChargeId) {
-        PagoRequest request = new PagoRequest();
-        request.setPedidoId(pagoId);
-        request.setPaymentMethodId(stripeChargeId);
+            @Valid @RequestBody PagoRequest request) {
         PagoResponse response = pagoService.processPago(request);
         return ResponseEntity.ok(response);
     }

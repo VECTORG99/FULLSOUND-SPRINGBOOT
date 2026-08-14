@@ -130,7 +130,7 @@ public class BeatController {
     @PostMapping("/{id}/like")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MessageResponse> incrementLikes(@PathVariable Integer id) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+        return ResponseEntity.status(HttpStatus.GONE)
             .body(new MessageResponse("La funcionalidad de likes ha sido removida", false));
     }
 }

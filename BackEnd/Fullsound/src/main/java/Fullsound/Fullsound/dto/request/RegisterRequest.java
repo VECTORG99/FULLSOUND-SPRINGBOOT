@@ -27,7 +27,8 @@ public class RegisterRequest {
     @Email(message = "El correo debe ser válido")
     private String correo;
     @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
+    @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$", message = "La contraseña debe contener al menos una minúscula, una mayúscula y un número")
     private String contraseña;
     private String rol;
     private String nombre;
