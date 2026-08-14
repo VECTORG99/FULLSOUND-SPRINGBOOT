@@ -1,5 +1,7 @@
 package Fullsound.Fullsound.exception;
 import Fullsound.Fullsound.dto.response.MessageResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -12,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<MessageResponse> handleResourceNotFound(ResourceNotFoundException ex) {
         MessageResponse response = MessageResponse.builder()
@@ -60,9 +63,9 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<MessageResponse> handleGlobalException(Exception ex) {
-        ex.printStackTrace();  
+        log.error("Unexpected error", ex);
         MessageResponse response = MessageResponse.builder()
-                .message("Error interno del servidor: " + ex.getMessage())
+                .message("Error interno del servidor")
                 .success(false)
                 .build();
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);

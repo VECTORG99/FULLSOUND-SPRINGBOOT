@@ -1,6 +1,8 @@
 package Fullsound.Fullsound.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,10 +26,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UploadController {
 
-    @Value("${supabase.url:https://kivpcepyhfpqjfoycwel.supabase.co}")
+    private static final Logger log = LoggerFactory.getLogger(UploadController.class);
+
+    @Value("${supabase.url:https://your-project.supabase.co}")
     private String supabaseUrl;
 
-    @Value("${supabase.key:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpdnBjZXB5aGZwcWpmb3ljd2VsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMxODQyMDIsImV4cCI6MjA0ODc2MDIwMn0.TQZY9-Zs6rrZj5nTvs0k_JXi1OnNQd7g8sCaT0IfUc4}")
+    @Value("${supabase.key}")
     private String supabaseKey;
 
     @PostMapping("/imagen")
@@ -101,8 +105,8 @@ public class UploadController {
                 return ResponseEntity.ok(result);
             } else {
                 // Log detallado del error
-                System.err.println("Supabase upload error - Status: " + response.statusCode());
-                System.err.println("Response body: " + response.body());
+                log.error("Supabase upload error - Status: {}", response.statusCode());
+                log.error("Response body: {}", response.body());
                 
                 Map<String, Object> error = new HashMap<>();
                 error.put("error", "Error al subir archivo a Supabase");
@@ -115,17 +119,18 @@ public class UploadController {
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Error al leer el archivo", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Error al leer el archivo: " + e.getMessage()));
+                .body(Map.of("error", "Error al leer el archivo"));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            log.error("Proceso interrumpido", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Proceso interrumpido: " + e.getMessage()));
+                .body(Map.of("error", "Proceso interrumpido"));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error inesperado al subir archivo", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Error inesperado: " + e.getMessage(), "type", e.getClass().getName()));
+                .body(Map.of("error", "Error inesperado al subir archivo"));
         }
     }
 }

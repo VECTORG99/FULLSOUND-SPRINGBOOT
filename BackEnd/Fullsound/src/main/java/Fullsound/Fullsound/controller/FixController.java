@@ -2,12 +2,14 @@ package Fullsound.Fullsound.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/fix")
 @CrossOrigin(originPatterns = "*")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('administrador')")
 public class FixController {
     
     private final JdbcTemplate jdbcTemplate;

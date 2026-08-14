@@ -5,6 +5,7 @@ import Fullsound.Fullsound.repository.PedidoRepository;
 import Fullsound.Fullsound.repository.RolRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -15,6 +16,7 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/test/database")
 @CrossOrigin(origins = "*")
+@PreAuthorize("hasAuthority('administrador')")
 public class DatabaseTestController {
     @Autowired
     private DataSource dataSource;

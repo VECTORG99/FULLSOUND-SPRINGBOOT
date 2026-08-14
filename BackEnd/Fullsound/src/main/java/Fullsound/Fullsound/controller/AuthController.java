@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(originPatterns = "*", allowedHeaders = "*")
 @Tag(name = "🔐 Autenticación", description = "Endpoints para registro, login y gestión de autenticación JWT")
 public class AuthController {
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
     private final AuthService authService;
     @Operation(
         summary = "Registrar nuevo usuario",
@@ -40,9 +43,7 @@ public class AuthController {
     })
     @PostMapping("/register")
     public ResponseEntity<MessageResponse> register(@Valid @RequestBody RegisterRequest request) {
-        System.out.println("[AUTH] Registro recibido - Usuario: " + request.getNombreUsuario() + 
-                         ", Correo: " + request.getCorreo() + 
-                         ", Rol: " + request.getRol());
+        log.info("Registro recibido - Usuario: {}, Correo: {}", request.getNombreUsuario(), request.getCorreo());
         MessageResponse response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
