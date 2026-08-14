@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for pom.xml
+        id: check_pom
+        working-directory: BackEnd/Fullsound
+        run: |
+          if [ -f "pom.xml" ]; then
+            echo "has_pom=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_pom=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up JDK 21
+        if: steps.check_pom.outputs.has_pom == 'true'
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Maven tests
+        if: steps.check_pom.outputs.has_pom == 'true'
+        working-directory: BackEnd/Fullsound
+        run: mvn --batch-mode --update-snapshots clean test -Dspring.profiles.active=test
+
+      - name: Skip (no pom.xml found)
+        if: steps.check_pom.outputs.has_pom == 'false'
+        run: echo "No pom.xml found in BackEnd/Fullsound — skipping Maven tests."

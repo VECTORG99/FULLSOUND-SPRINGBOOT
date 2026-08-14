@@ -1,3 +1,5 @@
+> 📚 **Proyecto educativo** — Este repositorio forma parte de mi formación temprana en DUOC UC (Instituto Profesional). Las prácticas aquí reflejadas corresponden al momento de desarrollo y pueden no representar estándares actuales.
+
 <div align="center">
 
 # 🎵 FullSound
@@ -148,6 +150,13 @@ El flujo de CI/CD de GitHub Actions (`.github/workflows/deploy-backend-aws.yml`)
 
 - **[FullSound-KOTLIN](https://github.com/VECTORG99/FullSound-KOTLIN)** — Cliente Android (Kotlin) que consume esta API.
 
+## 📚 Aviso educativo
+
+> **Proyecto educativo** — Este repositorio forma parte de mi formación temprana
+> en **DUOC UC** (Instituto Profesional). Las prácticas aquí reflejadas
+> corresponden al momento de desarrollo y pueden no representar estándares
+> actuales de la industria. Se conserva con fines de portafolio y aprendizaje.
+
 ## Licencia
 
-Este proyecto está bajo la licencia MIT — ver el archivo [LICENSE](LICENSE) para más detalles.
+El proyecto está bajo la licencia MIT — ver el archivo [LICENSE](LICENSE) para más detalles.
